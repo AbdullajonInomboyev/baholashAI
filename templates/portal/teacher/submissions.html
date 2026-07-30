@@ -1,0 +1,26 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Topshiriq / Ishlar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ assignment.title }} — topshirilgan ishlar</h1></div>
+<div class="help" style="margin-bottom:12px">AI qo‘ygan bahoni tasdiqlang yoki yakuniy bahoni qo‘lda o‘zgartiring.</div>
+{% if submissions %}
+<table class="grid"><thead><tr><th>Talaba</th><th>Holat</th><th>AI baho</th><th>Yakuniy</th><th>Amal</th></tr></thead><tbody>
+  {% for s in submissions %}<tr>
+    <td>{{ s.student.full_name|default:s.student.username }}</td>
+    <td>{% if s.status == 'teacher_reviewed' %}<span class="tag ok">Tasdiqlangan</span>{% elif s.status == 'ai_evaluated' %}<span class="tag warn">AI baholadi</span>{% else %}<span class="tag mut">Topshirilgan</span>{% endif %}</td>
+    <td>{% if s.ai_evaluation %}{{ s.ai_evaluation.score }}{% else %}—{% endif %}</td>
+    <td>{% if s.teacher_review %}<strong>{{ s.teacher_review.final_score }}</strong> {% if s.teacher_review.status == 'modified' %}<span class="tag mut">o‘zgartirilgan</span>{% endif %}{% else %}—{% endif %}</td>
+    <td class="actions">
+      {% if s.ai_evaluation and not s.teacher_review %}
+        <form class="inline-form" method="post" action="{% url 'portal:teacher_review_confirm' s.pk %}">{% csrf_token %}
+          <button class="btn sm" type="submit">Tasdiqlash</button></form>
+        <form class="inline-form" method="post" action="{% url 'portal:teacher_review_override' s.pk %}">{% csrf_token %}
+          <input type="number" name="final_score" step="0.01" min="0" max="100" placeholder="baho" style="width:80px;padding:6px;border:1px solid var(--line);border-radius:6px">
+          <button class="btn ghost sm" type="submit">O‘zgartirish</button></form>
+      {% elif s.teacher_review %}<span class="tag ok">Baholangan</span>{% else %}<span class="help">AI baholamoqda…</span>{% endif %}
+    </td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Hali ish topshirilmagan.</div>{% endif %}
+{% endblock %}

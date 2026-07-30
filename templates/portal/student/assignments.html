@@ -1,0 +1,18 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}Topshiriqlarim{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Topshiriqlarim</h1></div>
+{% if rows %}
+<table class="grid"><thead><tr><th>Topshiriq</th><th>Fan</th><th>Turi</th><th>Muddat</th><th>Holat</th><th></th></tr></thead><tbody>
+  {% for a, s in rows %}<tr>
+    <td>{{ a.title }}</td>
+    <td>{{ a.teacher_assignment.department_course.course.code }}</td>
+    <td>{{ a.assignment_type.name }}</td>
+    <td>{{ a.due_date|default:"—" }}</td>
+    <td>{% if s %}<span class="tag ok">Topshirilgan</span>{% elif a.status == 'closed' %}<span class="tag warn">Yopilgan</span>{% else %}<span class="tag mut">Topshirilmagan</span>{% endif %}</td>
+    <td><a class="btn ghost sm" href="{% url 'portal:student_assignment_detail' a.pk %}">Ochish</a></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Sizga mos topshiriq hali yo‘q.</div>{% endif %}
+{% endblock %}

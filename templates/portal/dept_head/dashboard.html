@@ -1,0 +1,20 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}Kafedra · {{ active_dept.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Boshqaruv paneli</h1></div>
+<div class="cards">
+  <div class="card"><div class="n">{{ n_courses }}</div><div class="k">Kafedra fanlari</div></div>
+  <div class="card"><div class="n">{{ n_teachers }}</div><div class="k">O‘qituvchilar</div></div>
+  <div class="card"><div class="n">{{ n_resources }}</div><div class="k">Resurslar</div></div>
+  <div class="card"><div class="n">{{ n_low }}</div><div class="k">Past sifatli (&lt;80%)</div></div>
+  <div class="card"><div class="n">{{ open_remarks }}</div><div class="k">Ochiq izohlar</div></div>
+</div>
+<div class="panel-card">
+  <p>Bu yerdan kafedra fanlariga o‘qituvchi biriktirasiz, o‘qituvchilar yuklagan resurslar sifatini AI orqali ko‘rasiz va zam dekandan kelgan izohlarni boshqarasiz.</p>
+  <div class="actions">
+    <a class="btn" href="{% url 'portal:dept_courses' %}">Fanlar va o‘qituvchilar</a>
+    <a class="btn ghost" href="{% url 'portal:dept_resources' %}?low=1">Past sifatli resurslar</a>
+  </div>
+</div>
+{% endblock %}

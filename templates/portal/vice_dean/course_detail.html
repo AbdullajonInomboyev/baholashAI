@@ -1,0 +1,95 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlar / {{ course.code }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ course.code }} — {{ course.name }}</h1>
+  <div class="spacer"></div>
+  <a class="btn ghost" href="{% url 'portal:course_edit' course.pk %}">Tahrirlash</a>
+  <form class="inline-form" method="post" action="{% url 'portal:course_delete' course.pk %}"
+        onsubmit="return confirm('Fan butunlay o‘chirilsinmi?')">{% csrf_token %}
+    <button class="btn danger" type="submit">O‘chirish</button></form>
+</div>
+
+<div class="cards">
+  <div class="card"><div class="n">{{ course.total_hours|default:"—" }}</div><div class="k">Umumiy soat</div></div>
+  <div class="card"><div class="n">{{ course.credit|default:"—" }}</div><div class="k">Kredit</div></div>
+  <div class="card"><div class="n">{{ course.get_study_form_display }}</div><div class="k">Ta‘lim shakli</div></div>
+  <div class="card"><div class="n">{% if course.is_elective %}Tanlov{% else %}Majburiy{% endif %}</div><div class="k">Turi</div></div>
+</div>
+
+<div class="panel-card">
+  <h2>Soatlar tarkibi</h2>
+  <table class="grid"><thead><tr><th>Ma‘ruza</th><th>Amaliy</th><th>Laboratoriya</th><th>Seminar</th><th>Kurs loyihasi</th><th>Mustaqil</th></tr></thead>
+    <tbody><tr>
+      <td>{{ course.lecture_hours|default:"—" }}</td><td>{{ course.practice_hours|default:"—" }}</td>
+      <td>{{ course.lab_hours|default:"—" }}</td><td>{{ course.seminar_hours|default:"—" }}</td>
+      <td>{{ course.course_project_hours|default:"—" }}</td><td>{{ course.independent_hours|default:"—" }}</td>
+    </tr></tbody></table>
+  <div class="help">Yo‘nalish: {{ course.direction.code }} — {{ course.direction.name }}</div>
+</div>
+
+<div class="panel-card">
+  <h2>Semestr taqsimoti</h2>
+  {% if placements %}
+  <table class="grid"><thead><tr><th>Semestr</th><th>Kredit</th><th>Haftalik soat</th><th></th></tr></thead><tbody>
+    {% for p in placements %}<tr>
+      <td>{{ p.semester.number }}-semestr</td><td>{{ p.credits|default:"—" }}</td><td>{{ p.weekly_hours|default:"—" }}</td>
+      <td><form class="inline-form" method="post" action="{% url 'portal:course_placement_delete' course.pk p.pk %}">
+        {% csrf_token %}<button class="btn ghost sm" type="submit">Olib tashlash</button></form></td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Semestrga biriktirilmagan. Import xato bo‘lsa quyida qo‘lda qo‘shing.</div>{% endif %}
+  <form class="stack" method="post" action="{% url 'portal:course_placement_add' course.pk %}" style="margin-top:14px">
+    {% csrf_token %}
+    <div class="row">
+      <div><label>Semestr (1–8)</label>{{ placement_form.semester_number }}</div>
+      <div><label>Kredit</label>{{ placement_form.credits }}</div>
+      <div><label>Haftalik soat</label>{{ placement_form.weekly_hours }}</div>
+    </div>
+    <div style="margin-top:12px"><button class="btn sm" type="submit">Semestrga qo‘shish / yangilash</button></div>
+  </form>
+</div>
+
+<div class="panel-card">
+  <h2>Kafedralar va o‘qituvchilar</h2>
+  {% if dept_links %}
+  <table class="grid"><thead><tr><th>Kafedra</th><th>O‘qituvchilar</th><th></th></tr></thead><tbody>
+    {% for link in dept_links %}<tr>
+      <td>{{ link.department.name }}</td>
+      <td>{% for t in teachers %}{% if t.department_course_id == link.pk %}<span class="tag mut">{{ t.teacher }}</span> {% endif %}{% empty %}—{% endfor %}</td>
+      <td><form class="inline-form" method="post" action="{% url 'portal:course_unassign' course.pk link.pk %}">
+        {% csrf_token %}<button class="btn ghost sm" type="submit">Olib tashlash</button></form></td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Hali kafedraga biriktirilmagan.</div>{% endif %}
+  <form class="stack" method="post" action="{% url 'portal:course_assign' course.pk %}" style="margin-top:14px">
+    {% csrf_token %}
+    <div class="row"><div><label>Kafedraga biriktirish</label>{{ assign_form.department }}</div></div>
+    <div style="margin-top:12px"><button class="btn sm" type="submit">Biriktirish</button></div>
+  </form>
+</div>
+
+<div class="panel-card">
+  <h2>Fan dasturi mavzulari <span class="help">(AI resurs moslik tekshiruvi shu mavzularga qaraydi)</span></h2>
+  {% if topics %}
+  <table class="grid"><thead><tr><th>#</th><th>Mavzu</th><th></th></tr></thead><tbody>
+    {% for t in topics %}<tr>
+      <td>{{ t.order }}</td><td>{{ t.title }}</td>
+      <td><form class="inline-form" method="post" action="{% url 'portal:course_topic_delete' course.pk t.pk %}">
+        {% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Hali mavzu kiritilmagan.</div>{% endif %}
+  <form class="stack" method="post" action="{% url 'portal:course_topic_add' course.pk %}" style="margin-top:14px">
+    {% csrf_token %}
+    <div class="row">
+      <div style="max-width:120px"><label>Tartib</label>{{ topic_form.order }}</div>
+      <div><label>Mavzu</label>{{ topic_form.title }}</div>
+    </div>
+    <div style="margin-top:12px"><button class="btn sm" type="submit">Mavzu qo‘shish</button></div>
+  </form>
+</div>
+
+<a class="btn ghost" href="{% url 'portal:courses' %}">← Fanlar ro‘yxati</a>
+{% endblock %}

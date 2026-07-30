@@ -1,0 +1,18 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}Baholarim{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Baholarim</h1></div>
+{% if submissions %}
+<table class="grid"><thead><tr><th>Topshiriq</th><th>Turi</th><th>AI baho</th><th>Yakuniy baho</th><th>Holat</th></tr></thead><tbody>
+  {% for s in submissions %}<tr>
+    <td>{{ s.assignment.title }}</td>
+    <td>{{ s.assignment.assignment_type.name }}</td>
+    <td>{% if s.ai_evaluation %}{{ s.ai_evaluation.score }}{% else %}—{% endif %}</td>
+    <td>{% if s.teacher_review %}<strong>{{ s.teacher_review.final_score }}</strong>{% else %}<span class="help">kutilmoqda</span>{% endif %}</td>
+    <td>{% if s.status == 'teacher_reviewed' %}<span class="tag ok">Yakunlangan</span>{% else %}<span class="tag warn">Jarayonda</span>{% endif %}</td>
+  </tr>{% endfor %}
+</tbody></table>
+<div class="help" style="margin-top:8px">AI bahosi dastlabki; yakuniy bahoni o‘qituvchi tasdiqlaydi.</div>
+{% else %}<div class="empty">Hali baho yo‘q.</div>{% endif %}
+{% endblock %}

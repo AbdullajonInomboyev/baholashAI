@@ -1,0 +1,17 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlar / Biriktirish{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Fanni kafedraga biriktirish</h1></div>
+<div class="panel-card" style="max-width:560px">
+  <p><strong>{{ course.code }}</strong> — {{ course.name }}</p>
+  <form class="stack" method="post">{% csrf_token %}
+    <label>Kafedra</label>{{ form.department }}
+    <div style="margin-top:16px"><button class="btn" type="submit">Biriktirish</button>
+    <a class="btn ghost" href="{% url 'portal:courses' %}">Orqaga</a></div>
+  </form>
+  <h2 style="margin-top:20px">Biriktirilgan kafedralar</h2>
+  {% if current %}<ul>{% for l in current %}<li>{{ l.department.name }}</li>{% endfor %}</ul>
+  {% else %}<div class="help">Hali biriktirilmagan.</div>{% endif %}
+</div>
+{% endblock %}

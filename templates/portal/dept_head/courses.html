@@ -1,0 +1,17 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlar va o‘qituvchilar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Kafedra fanlari</h1><div class="spacer"></div>
+  <a class="btn" href="{% url 'portal:dept_course_browser' %}">Fan biriktirish</a></div>
+{% if links %}
+<table class="grid"><thead><tr><th>Kod</th><th>Fan</th><th>Yo‘nalish</th><th>O‘qituvchilar</th><th></th></tr></thead><tbody>
+  {% for l in links %}<tr>
+    <td>{{ l.course.code }}</td><td>{{ l.course.name }}</td>
+    <td>{{ l.course.direction.code }}</td>
+    <td>{% if l.n_teachers %}<span class="tag ok">{{ l.n_teachers }} ta</span>{% else %}<span class="tag warn">Yo‘q</span>{% endif %}</td>
+    <td><a class="btn ghost sm" href="{% url 'portal:dept_course_teachers' l.pk %}">O‘qituvchilar</a></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Kafedraga hali fan biriktirilmagan. «Fan biriktirish» orqali qo‘shing (boshqa fakultet fanlari ham).</div>{% endif %}
+{% endblock %}

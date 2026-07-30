@@ -1,0 +1,21 @@
+{% extends "admin/base.html" %}
+{% block title %}{% if subtitle %}{{ subtitle }} | {% endif %}{{ title }} | O‘quv AI{% endblock %}
+{% block branding %}
+<div id="site-name"><a href="{% url 'admin:index' %}">O‘quv<span style="color:#c1832b">AI</span> — sayt boshqaruvi</a></div>
+{% endblock %}
+{% block extrastyle %}{{ block.super }}
+<style>
+:root, html[data-theme="light"]{
+  --primary:#274690; --secondary:#16233b;
+  --header-bg:#16233b; --header-color:#fff; --header-branding-color:#fff;
+  --header-link-color:#fff; --link-fg:#274690; --link-hover-color:#1f3877;
+  --accent:#274690; --button-bg:#274690; --button-hover-bg:#1f3877;
+  --default-button-bg:#274690; --default-button-hover-bg:#1f3877;
+  --object-tools-bg:#16233b; --object-tools-hover-bg:#274690;
+}
+#header{background:#16233b}
+.module h2, .module caption, .inline-group h2{background:#274690}
+div.breadcrumbs{background:#1f3877}
+a.button, input[type=submit], input[type=button], .submit-row input, a.button.default{border-radius:8px}
+</style>
+{% endblock %}

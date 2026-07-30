@@ -1,0 +1,35 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}Resurs sifati (AI){% endblock %}
+{% block content %}
+<div class="page-head"><h1>Resurs sifati (AI tahlili)</h1></div>
+<div class="help" style="margin-bottom:12px">O‘qituvchilar yuklagan resurslar fan dasturidagi mavzularga mosligi (moslik %) va to‘liqligi bo‘yicha AI tomonidan baholanadi. Past ballilarni («ishkal») filtr orqali toping.</div>
+<form class="filterbar" method="get">
+  <div><label class="help">O‘qituvchi</label><br>
+    <select name="teacher"><option value="">Barchasi</option>
+      {% for t in teachers %}<option value="{{ t.pk }}" {% if f_teacher == t.pk|stringformat:'s' %}selected{% endif %}>{{ t.full_name|default:t.username }}</option>{% endfor %}
+    </select></div>
+  <div><label class="help">Fan</label><br>
+    <select name="course"><option value="">Barchasi</option>
+      {% for c in dept_courses %}<option value="{{ c.pk }}" {% if f_course == c.pk|stringformat:'s' %}selected{% endif %}>{{ c.code }}</option>{% endfor %}
+    </select></div>
+  <div><label class="help">&nbsp;</label><br>
+    <label style="font-size:14px"><input type="checkbox" name="low" value="1" {% if only_low %}checked{% endif %}> Faqat &lt;{{ low_threshold }}% moslik</label></div>
+  <button class="btn ghost" type="submit">Filtrlash</button>
+</form>
+{% if reviews %}
+<table class="grid"><thead><tr><th>Resurs</th><th>O‘qituvchi</th><th>Holat</th><th>Moslik</th><th>To‘liqlik</th><th></th></tr></thead><tbody>
+  {% for r in reviews %}<tr>
+    <td>{{ r.resource.title }}</td>
+    <td>{{ r.resource.uploaded_by.full_name|default:r.resource.uploaded_by.username }}</td>
+    <td>{% if r.status == 'completed' %}<span class="tag ok">Yakunlangan</span>
+        {% elif r.status == 'pending' %}<span class="tag warn">Navbatda</span>
+        {% elif r.status == 'processing' %}<span class="tag warn">Tahlilda</span>
+        {% else %}<span class="tag bad">Xato</span>{% endif %}</td>
+    <td>{% if r.match_score != None %}<span class="tag {% if r.match_score < low_threshold %}bad{% else %}ok{% endif %}">{{ r.match_score }}%</span>{% else %}—{% endif %}</td>
+    <td>{% if r.completeness_score != None %}{{ r.completeness_score }}%{% else %}—{% endif %}</td>
+    <td><a class="btn ghost sm" href="{% url 'portal:dept_resource_detail' r.pk %}">Batafsil</a></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Resurs topilmadi.</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}Topshiriq / {{ assignment.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ assignment.title }}</h1></div>
+<div class="panel-card">
+  <p><strong>Fan:</strong> {{ assignment.teacher_assignment.department_course.course.name }}</p>
+  <p><strong>Turi:</strong> {{ assignment.assignment_type.name }} · <strong>Muddat:</strong> {{ assignment.due_date|default:"—" }}</p>
+  {% if assignment.description %}<p>{{ assignment.description }}</p>{% endif %}
+</div>
+{% if submission %}
+<div class="panel-card">
+  <h2>Sizning ishingiz</h2>
+  <p>Holat: {% if submission.status == 'teacher_reviewed' %}<span class="tag ok">Baholangan</span>{% elif submission.status == 'ai_evaluated' %}<span class="tag warn">AI baholadi</span>{% else %}<span class="tag mut">Topshirilgan</span>{% endif %}</p>
+  {% if submission.ai_evaluation %}<p><strong>AI bahosi:</strong> {{ submission.ai_evaluation.score }}</p>
+    <p class="help">{{ submission.ai_evaluation.feedback }}</p>{% endif %}
+  {% if submission.teacher_review %}<p><strong>Yakuniy baho:</strong> {{ submission.teacher_review.final_score }}</p>{% endif %}
+</div>
+{% endif %}
+{% if assignment.status != 'closed' %}
+<div class="panel-card" style="max-width:520px">
+  <h2>{% if submission %}Qayta topshirish{% else %}Ish topshirish{% endif %}</h2>
+  <form class="stack" method="post" enctype="multipart/form-data" action="{% url 'portal:student_submit' assignment.pk %}">{% csrf_token %}
+    {{ form.file }}
+    <div style="margin-top:14px"><button class="btn" type="submit">Topshirish</button></div>
+  </form>
+</div>
+{% else %}<div class="empty">Topshiriq yopilgan — topshirib bo‘lmaydi.</div>{% endif %}
+<a class="btn ghost" href="{% url 'portal:student_assignments' %}">← Topshiriqlar</a>
+{% endblock %}

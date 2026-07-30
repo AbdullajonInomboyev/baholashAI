@@ -1,0 +1,30 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Resurslar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Resurslar</h1></div>
+<div class="panel-card">
+  <h2>Yangi resurs yuklash</h2>
+  <form class="stack" method="post" enctype="multipart/form-data" action="{% url 'portal:teacher_resource_upload' %}">{% csrf_token %}
+    <div class="row">
+      <div><label>Sarlavha</label>{{ form.title }}</div>
+      <div><label>Turi</label>{{ form.kind }}</div>
+    </div>
+    <label>Fayl</label>{{ form.file }}
+    <label style="margin-top:10px">Qaysi fanlarga biriktirilsin (bittadan ko‘p bo‘lishi mumkin)</label>
+    {{ form.assignments }}
+    <div style="margin-top:14px"><button class="btn gold" type="submit">Yuklash</button></div>
+    <div class="help">Yuklanishi bilan AI resursni mavzuga moslik va to‘liqlik bo‘yicha tahlil qiladi.</div>
+  </form>
+</div>
+{% if resources %}
+<table class="grid"><thead><tr><th>Sarlavha</th><th>Turi</th><th>Fanlar</th><th>AI moslik</th><th>To‘liqlik</th></tr></thead><tbody>
+  {% for r in resources %}<tr>
+    <td>{{ r.title }}</td><td>{{ r.get_kind_display }}</td>
+    <td>{% for l in r.links.all %}<span class="tag mut">{{ l.teacher_assignment.department_course.course.code }}</span> {% endfor %}</td>
+    <td>{% if r.review and r.review.match_score != None %}<span class="tag {% if r.review.match_score < 80 %}bad{% else %}ok{% endif %}">{{ r.review.match_score }}%</span>{% else %}<span class="tag warn">Tahlilda</span>{% endif %}</td>
+    <td>{% if r.review and r.review.completeness_score != None %}{{ r.review.completeness_score }}%{% else %}—{% endif %}</td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Hali resurs yuklanmagan.</div>{% endif %}
+{% endblock %}

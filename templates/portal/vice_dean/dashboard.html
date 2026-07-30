@@ -1,0 +1,26 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Boshqaruv paneli{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Boshqaruv paneli</h1></div>
+<div class="cards">
+  <div class="card"><div class="n">{{ n_departments }}</div><div class="k">Kafedra</div></div>
+  <div class="card"><div class="n">{{ n_directions }}</div><div class="k">Yo‘nalish</div></div>
+  <div class="card"><div class="n">{{ n_years }}</div><div class="k">O‘quv yili</div></div>
+  <div class="card"><div class="n">{{ n_courses }}</div><div class="k">Fan</div></div>
+  <div class="card"><div class="n">{{ n_students }}</div><div class="k">Talaba</div></div>
+  <div class="card"><div class="n">{{ open_remarks }}</div><div class="k">Ochiq izoh</div></div>
+</div>
+<div class="panel-card">
+  <h2>So‘nggi o‘quv yillari</h2>
+  {% if recent_years %}
+  <table class="grid"><thead><tr><th>O‘quv yili</th><th>Holat</th><th></th></tr></thead><tbody>
+    {% for y in recent_years %}<tr>
+      <td>{{ y.title }}</td>
+      <td>{% if y.is_active %}<span class="tag ok">Faol</span>{% else %}<span class="tag mut">Arxiv</span>{% endif %}</td>
+      <td><a class="btn ghost sm" href="{% url 'portal:year_detail' y.pk %}">Ochish</a></td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="empty">Hali o‘quv yili ochilmagan.</div>{% endif %}
+</div>
+{% endblock %}

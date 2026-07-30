@@ -1,0 +1,36 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlar / {{ link.course.code }} / O‘qituvchilar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ link.course.code }} — o‘qituvchilar</h1></div>
+<div class="help" style="margin-bottom:14px">{{ link.course.name }} · Bitta fanga bir nechta o‘qituvchi biriktirilishi mumkin.</div>
+
+<div class="panel-card">
+  <h2>Biriktirilgan o‘qituvchilar</h2>
+  {% with active_list=assignments %}
+  {% if assignments %}
+  <table class="grid"><thead><tr><th>O‘qituvchi</th><th>Holat</th><th></th></tr></thead><tbody>
+    {% for a in assignments %}<tr>
+      <td>{{ a.teacher.full_name|default:a.teacher.username }}</td>
+      <td>{% if a.status == 'active' %}<span class="tag ok">Faol</span>{% else %}<span class="tag mut">Olib tashlangan</span>{% endif %}</td>
+      <td>{% if a.status == 'active' %}<form class="inline-form" method="post" action="{% url 'portal:dept_teacher_remove' link.pk a.pk %}"
+            onsubmit="return confirm('Olib tashlansinmi?')">{% csrf_token %}
+        <button class="btn ghost sm" type="submit">Olib tashlash</button></form>{% endif %}</td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Hali o‘qituvchi biriktirilmagan.</div>{% endif %}
+  {% endwith %}
+</div>
+
+<div class="panel-card" style="max-width:520px">
+  <h2>O‘qituvchi biriktirish</h2>
+  <form class="stack" method="post" action="{% url 'portal:dept_teacher_assign' link.pk %}">{% csrf_token %}
+    <label>O‘qituvchi</label>
+    <select name="teacher">
+      {% for t in teachers %}<option value="{{ t.pk }}" {% if t.pk in assigned_ids %}disabled{% endif %}>{{ t.full_name|default:t.username }}{% if t.pk in assigned_ids %} — biriktirilgan{% endif %}</option>{% endfor %}
+    </select>
+    <div style="margin-top:14px"><button class="btn" type="submit">Biriktirish</button>
+      <a class="btn ghost" href="{% url 'portal:dept_courses' %}">Orqaga</a></div>
+  </form>
+</div>
+{% endblock %}

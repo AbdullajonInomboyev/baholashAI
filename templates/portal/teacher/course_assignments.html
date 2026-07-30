@@ -1,0 +1,23 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlarim / {{ ta.department_course.course.code }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ ta.department_course.course.code }} — topshiriqlar</h1><div class="spacer"></div>
+  <a class="btn" href="{% url 'portal:teacher_assignment_create' ta.pk %}">Yangi topshiriq</a></div>
+{% if assignments %}
+<table class="grid"><thead><tr><th>Sarlavha</th><th>Turi</th><th>Muddat</th><th>Holat</th><th></th></tr></thead><tbody>
+  {% for a in assignments %}<tr>
+    <td>{{ a.title }}</td><td>{{ a.assignment_type.name }}</td>
+    <td>{{ a.due_date|default:"—" }}</td>
+    <td>{% if a.status == 'open' %}<span class="tag ok">Ochiq</span>{% elif a.status == 'draft' %}<span class="tag mut">Qoralama</span>{% else %}<span class="tag warn">Yopilgan</span>{% endif %}</td>
+    <td class="actions">
+      <a class="btn ghost sm" href="{% url 'portal:teacher_submissions' a.pk %}">Ishlar</a>
+      <a class="btn ghost sm" href="{% url 'portal:teacher_assignment_edit' ta.pk a.pk %}">Tahrir</a>
+      <form class="inline-form" method="post" action="{% url 'portal:teacher_assignment_delete' ta.pk a.pk %}"
+            onsubmit="return confirm('O‘chirilsinmi?')">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form>
+    </td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Hali topshiriq yo‘q.</div>{% endif %}
+<a class="btn ghost" href="{% url 'portal:teacher_courses' %}" style="margin-top:14px">← Fanlarim</a>
+{% endblock %}

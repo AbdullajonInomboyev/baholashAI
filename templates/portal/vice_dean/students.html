@@ -1,0 +1,47 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Talabalar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Talabalar</h1><div class="spacer"></div>
+  {% if year_id %}
+  <a class="btn ghost" href="{% url 'portal:student_template' %}">Shablon</a>
+  <a class="btn ghost" href="{% url 'portal:student_export' %}?year={{ year_id }}">Export (Excel)</a>
+  {% endif %}
+</div>
+
+<div class="filterbar">
+  <div><label class="help">O‘quv yili</label><br>
+  <select onchange="location.href='?year='+this.value">
+    {% for y in years %}<option value="{{ y.pk }}" {% if y.pk == year_id %}selected{% endif %}>{{ y.title }}</option>{% endfor %}
+  </select></div>
+</div>
+
+<div class="panel-card">
+  <h2>Excel'dan import</h2>
+  <form class="stack" method="post" enctype="multipart/form-data" action="{% url 'portal:student_import' %}">
+    {% csrf_token %}<input type="hidden" name="year" value="{{ year_id }}">
+    {{ import_form.file }}
+    <div style="margin-top:12px"><button class="btn gold" type="submit">Import qilish</button></div>
+    <div class="help">Ustunlar: F.I.Sh., Login, Email, Telefon, Yo‘nalish kodi, Ta‘lim shakli, Guruh, Holat. «Shablon» tugmasidan namuna oling.</div>
+  </form>
+</div>
+
+{% if enrollments %}
+<table class="grid"><thead><tr><th>F.I.Sh.</th><th>Login</th><th>Yo‘nalish</th><th>Shakl</th><th>Guruh</th><th>Holat</th><th></th></tr></thead><tbody>
+  {% for e in enrollments %}<tr>
+    <td>{{ e.student.full_name|default:e.student.username }}</td>
+    <td>{{ e.student.username }}</td>
+    <td>{{ e.direction.code }}</td>
+    <td>{{ e.get_study_form_display }}</td>
+    <td>{{ e.group_name }}</td>
+    <td><span class="tag {% if e.status == 'active' %}ok{% else %}mut{% endif %}">{{ e.get_status_display }}</span></td>
+    <td class="actions">
+      <a class="btn ghost sm" href="{% url 'portal:student_edit' e.pk %}">Tahrir</a>
+      <form class="inline-form" method="post" action="{% url 'portal:student_delete' e.pk %}"
+            onsubmit="return confirm('Talaba biriktiruvi olib tashlansinmi?')">{% csrf_token %}
+        <button class="btn ghost sm" type="submit">O‘chirish</button></form>
+    </td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Bu o‘quv yilida talaba yo‘q. Excel'dan import qiling.</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlarim{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Fanlarim</h1></div>
+{% if assignments %}
+<table class="grid"><thead><tr><th>Kod</th><th>Fan</th><th>Kafedra</th><th>Topshiriqlar</th><th></th></tr></thead><tbody>
+  {% for ta in assignments %}<tr>
+    <td>{{ ta.department_course.course.code }}</td>
+    <td>{{ ta.department_course.course.name }}</td>
+    <td>{{ ta.department_course.department.name }}</td>
+    <td>{{ ta.n }}</td>
+    <td><a class="btn ghost sm" href="{% url 'portal:teacher_course_assignments' ta.pk %}">Topshiriqlar</a></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Sizga hali fan biriktirilmagan. Kafedra mudiri biriktiradi.</div>{% endif %}
+{% endblock %}

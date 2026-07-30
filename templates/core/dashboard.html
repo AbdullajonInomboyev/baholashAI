@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Boshqaruv paneli</h1>
+<p class="muted">Rollaringiz: {% for c, l in available_roles %}{{ l }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+<p>Rol panellari keyingi bosqichda ulanadi. Hozircha ma‘lumotlarni <a href="/admin/">admin panel</a> orqali ko‘rish mumkin.</p>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlar / Qidirish{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Fan biriktirish</h1></div>
+<div class="help" style="margin-bottom:12px">Istalgan yo‘nalish/fakultet fanini qidirib, o‘z kafedrangizga biriktiring.</div>
+<form class="filterbar" method="get">
+  <div><input type="text" name="q" value="{{ q }}" placeholder="Fan kodi yoki nomi" style="min-width:280px"></div>
+  <button class="btn" type="submit">Qidirish</button>
+</form>
+{% if results %}
+<table class="grid"><thead><tr><th>Kod</th><th>Fan</th><th>Yo‘nalish</th><th>Shakl</th><th></th></tr></thead><tbody>
+  {% for c in results %}<tr>
+    <td>{{ c.code }}</td><td>{{ c.name }}</td><td>{{ c.direction.code }}</td><td>{{ c.get_study_form_display }}</td>
+    <td>{% if c.pk in linked_ids %}<span class="tag mut">Biriktirilgan</span>
+        {% else %}<form class="inline-form" method="post" action="{% url 'portal:dept_course_pull' c.pk %}">{% csrf_token %}
+          <button class="btn sm" type="submit">Biriktirish</button></form>{% endif %}</td>
+  </tr>{% endfor %}
+</tbody></table>
+{% elif q %}<div class="empty">«{{ q }}» bo‘yicha fan topilmadi.</div>
+{% else %}<div class="empty">Qidiruv so‘zini kiriting.</div>{% endif %}
+{% endblock %}

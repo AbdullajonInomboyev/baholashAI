@@ -1,0 +1,14 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlar / {% if instance %}Tahrirlash{% else %}Yangi{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{% if instance %}Fanni tahrirlash{% else %}Fan qo‘shish{% endif %}</h1></div>
+<div class="panel-card" style="max-width:720px">
+<form class="stack" method="post">{% csrf_token %}
+  {% for field in form %}<label>{{ field.label }}</label>{{ field }}
+    {% if field.errors %}<div class="help" style="color:#a12">{{ field.errors|join:', ' }}</div>{% endif %}{% endfor %}
+  <div class="help">Kredit avtomatik hisoblanadi: umumiy soat ÷ 30.</div>
+  <div style="margin-top:18px"><button class="btn" type="submit">Saqlash</button>
+  <a class="btn ghost" href="{% url 'portal:courses' %}">Bekor qilish</a></div>
+</form></div>
+{% endblock %}

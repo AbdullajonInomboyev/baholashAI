@@ -1,0 +1,22 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Kafedralar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Kafedralar</h1><div class="spacer"></div>
+  <a class="btn" href="{% url 'portal:department_create' %}">Yangi kafedra</a></div>
+{% if departments %}
+<table class="grid"><thead><tr><th>Nomi</th><th>Mudir</th><th>Fanlar</th><th></th></tr></thead><tbody>
+  {% for d in departments %}<tr>
+    <td>{{ d.name }}</td>
+    <td>{% if d.head %}{{ d.head }}{% else %}<span class="tag warn">Tayinlanmagan</span>{% endif %}</td>
+    <td>{{ d.n }}</td>
+    <td class="actions">
+      <a class="btn ghost sm" href="{% url 'portal:department_edit' d.pk %}">Tahrirlash</a>
+      <form class="inline-form" method="post" action="{% url 'portal:department_delete' d.pk %}"
+            onsubmit="return confirm('Kafedra o‘chirilsinmi?')">{% csrf_token %}
+        <button class="btn danger sm" type="submit">O‘chirish</button></form>
+    </td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Hali kafedra yo‘q. «Yangi kafedra» tugmasidan boshlang.</div>{% endif %}
+{% endblock %}

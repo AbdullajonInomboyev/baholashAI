@@ -1,0 +1,41 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Hisobotlar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Hisobotlar</h1><div class="spacer"></div>
+  <a class="btn" href="{% url 'portal:report_faculty' %}">Fakultet hisoboti (Excel)</a></div>
+
+<div class="panel-card">
+  <h2>Kafedra hisobotlari</h2>
+  {% if departments %}
+  <table class="grid"><thead><tr><th>Kafedra</th><th>Mudir</th><th></th></tr></thead><tbody>
+    {% for d in departments %}<tr>
+      <td>{{ d.name }}</td><td>{{ d.head|default:"—" }}</td>
+      <td><a class="btn ghost sm" href="{% url 'portal:report_department' d.pk %}">Yuklab olish (Excel)</a></td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Kafedra yo‘q.</div>{% endif %}
+</div>
+
+<div class="panel-card">
+  <h2>Kafedra mudiriga «to‘g‘irla» izohi</h2>
+  <form class="stack" method="post" action="{% url 'portal:report_remark' %}">{% csrf_token %}
+    <label>Kafedra</label>{{ remark_form.department }}
+    <label>Izoh</label>{{ remark_form.message }}
+    <div style="margin-top:14px"><button class="btn" type="submit">Yuborish</button></div>
+  </form>
+</div>
+
+{% if sent_remarks %}
+<div class="panel-card">
+  <h2>Yuborilgan izohlar</h2>
+  <table class="grid"><thead><tr><th>Kafedra</th><th>Mudir</th><th>Izoh</th><th>Holat</th><th>Sana</th></tr></thead><tbody>
+    {% for r in sent_remarks %}<tr>
+      <td>{{ r.department }}</td><td>{{ r.target }}</td><td>{{ r.message }}</td>
+      <td><span class="tag {% if r.status == 'open' %}warn{% else %}ok{% endif %}">{{ r.get_status_display }}</span></td>
+      <td>{{ r.created_at|date:"d.m.Y" }}</td>
+    </tr>{% endfor %}
+  </tbody></table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+db.sqlite3
+/media/
+/staticfiles/
+.env
+.venv/
+venv/
+*.xlsx
+smoke_check.py
+*_out.txt
+.DS_Store

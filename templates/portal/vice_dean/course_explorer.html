@@ -1,0 +1,96 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Fanlar{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Fanlar</h1>
+  <div class="spacer"></div>
+  <select class="role-switch" onchange="location.href='?form='+this.value">
+    {% for c, l in study_forms %}<option value="{{ c }}" {% if c == study_form %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select>
+  <a class="btn" href="{% url 'portal:course_create' %}">Fan qo‘shish</a>
+</div>
+
+<div class="split">
+  <div class="tree">
+    <div class="t-head">O‘quv yili → Yo‘nalish → Semestr</div>
+    {% for ynode in tree %}
+    <details class="yr" {% if sel_year == ynode.year.pk|stringformat:'s' %}open{% endif %}>
+      <summary>
+        <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+        <span>{{ ynode.year.title }}</span>
+      </summary>
+      {% for dnode in ynode.dirs %}
+      <details {% if sel_year == ynode.year.pk|stringformat:'s' and sel_dir == dnode.dir.pk|stringformat:'s' %}open{% endif %}>
+        <summary>
+          <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+          <span>{{ dnode.dir.code }}</span><span class="cnt">{{ dnode.total }}</span>
+        </summary>
+        <a class="leaf all {% if sel_year == ynode.year.pk|stringformat:'s' and sel_dir == dnode.dir.pk|stringformat:'s' and not sel_sem and not sel_course %}active{% endif %}"
+           href="?year={{ ynode.year.pk }}&dir={{ dnode.dir.pk }}&form={{ study_form }}">Barcha fanlar<span class="cnt">{{ dnode.total }}</span></a>
+        {% for s in dnode.sems %}
+        <a class="leaf {% if sel_year == ynode.year.pk|stringformat:'s' and sel_dir == dnode.dir.pk|stringformat:'s' and sel_sem == s.n|stringformat:'s' %}active{% endif %}"
+           href="?year={{ ynode.year.pk }}&dir={{ dnode.dir.pk }}&sem={{ s.n }}&form={{ study_form }}">{{ s.n }}-semestr<span class="cnt">{{ s.count }}</span></a>
+        {% endfor %}
+        {% if dnode.elective %}<div class="leaf" style="opacity:.7">Tanlov: {{ dnode.elective }} ta</div>{% endif %}
+      </details>
+      {% endfor %}
+    </details>
+    {% empty %}<div class="help" style="padding:12px">Bu ta‘lim shakli bo‘yicha reja topilmadi. «O‘quv yili va import» dan boshlang.</div>
+    {% endfor %}
+  </div>
+
+  <div class="detail">
+  {% if detail %}
+    {% with c=detail.course %}
+    <div class="crumbline"><b>{{ c.curriculum.academic_year.title }}</b> / {{ c.curriculum.direction.code }} / {{ c.code }}</div>
+    <div class="page-head" style="margin-bottom:14px">
+      <h1 style="font-size:20px">{{ c.code }} — {{ c.name }}</h1><div class="spacer"></div>
+      <a class="btn ghost sm" href="{% url 'portal:course_edit' c.pk %}">Tahrirlash</a>
+      <a class="btn ghost sm" href="{% url 'portal:course_detail' c.pk %}">To‘liq sahifa</a>
+    </div>
+    <div class="cards">
+      <div class="card"><div class="n">{{ c.total_hours|default:"—" }}</div><div class="k">Umumiy soat</div></div>
+      <div class="card"><div class="n">{{ c.credit|default:"—" }}</div><div class="k">Kredit</div></div>
+      <div class="card"><div class="n">{{ c.get_study_form_display }}</div><div class="k">Shakl</div></div>
+      <div class="card"><div class="n">{% if c.is_elective %}Tanlov{% else %}Majburiy{% endif %}</div><div class="k">Turi</div></div>
+    </div>
+    <div class="panel-card">
+      <h2>Soatlar tarkibi</h2>
+      <table class="grid"><thead><tr><th>Ma‘ruza</th><th>Amaliy</th><th>Laboratoriya</th><th>Seminar</th><th>Kurs loyihasi</th><th>Mustaqil</th></tr></thead>
+      <tbody><tr><td>{{ c.lecture_hours|default:"—" }}</td><td>{{ c.practice_hours|default:"—" }}</td><td>{{ c.lab_hours|default:"—" }}</td><td>{{ c.seminar_hours|default:"—" }}</td><td>{{ c.course_project_hours|default:"—" }}</td><td>{{ c.independent_hours|default:"—" }}</td></tr></tbody></table>
+    </div>
+    <div class="panel-card">
+      <h2>Semestr taqsimoti</h2>
+      {% if detail.placements %}
+      <table class="grid"><thead><tr><th>Semestr</th><th>Kredit</th><th>Haftalik soat</th></tr></thead><tbody>
+        {% for p in detail.placements %}<tr><td>{{ p.semester.number }}-semestr</td><td>{{ p.credits|default:"—" }}</td><td>{{ p.weekly_hours|default:"—" }}</td></tr>{% endfor %}
+      </tbody></table>
+      {% else %}<div class="help">Semestrga biriktirilmagan.</div>{% endif %}
+    </div>
+    <div class="panel-card">
+      <h2>Kafedralar va o‘qituvchilar</h2>
+      {% if detail.dept_links %}<table class="grid"><thead><tr><th>Kafedra</th><th>O‘qituvchilar</th></tr></thead><tbody>
+        {% for link in detail.dept_links %}<tr><td>{{ link.department.name }}</td>
+          <td>{% for t in detail.teachers %}{% if t.department_course_id == link.pk %}<span class="tag mut">{{ t.teacher }}</span> {% endif %}{% endfor %}</td></tr>{% endfor %}
+      </tbody></table>{% else %}<div class="help">Kafedraga biriktirilmagan.</div>{% endif %}
+    </div>
+    {% endwith %}
+  {% elif course_list %}
+    <div class="crumbline"><b>{{ heading }}</b> — {{ course_list|length }} ta fan</div>
+    <table class="grid"><thead><tr><th>Kod</th><th>Fan</th><th>Soat</th><th>Kredit</th><th>Turi</th></tr></thead><tbody>
+      {% for c in course_list %}<tr style="cursor:pointer" onclick="location.href='?course={{ c.pk }}&form={{ study_form }}'">
+        <td><a href="?course={{ c.pk }}&form={{ study_form }}">{{ c.code }}</a></td>
+        <td>{{ c.name }}</td><td>{{ c.total_hours|default:"—" }}</td><td>{{ c.credit|default:"—" }}</td>
+        <td>{% if c.is_elective %}<span class="tag mut">Tanlov</span>{% else %}<span class="tag ok">Majburiy</span>{% endif %}</td>
+      </tr>{% endfor %}
+    </tbody></table>
+  {% else %}
+    <div class="d-empty">
+      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" style="opacity:.5"><path d="M4 4h11a2 2 0 0 1 2 2v14a1 1 0 0 0-1-1H4z"/><path d="M20 6v14a1 1 0 0 0-1-1H8"/></svg>
+      <p style="margin-top:12px">Chapdan o‘quv yili → yo‘nalish → semestrni tanlang.</p>
+    </div>
+  {% endif %}
+  </div>
+</div>
+{% endblock %}
