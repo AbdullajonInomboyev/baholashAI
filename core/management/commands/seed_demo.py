@@ -184,6 +184,15 @@ class Command(BaseCommand):
             defaults={"assignment_type": at, "status": Assignment.Status.OPEN,
                       "description": "Berilgan mavzu bo'yicha amaliy ishni bajaring."},
         )
+        # rubrika (baholash mezonlari)
+        from assessment.models import AssignmentCriterion
+        if not assignment.criteria.exists():
+            for i, (title, mx) in enumerate([
+                ("Mazmun to'liqligi", 10), ("Tuzilish va mantiq", 10),
+                ("Amaliy misollar", 10),
+            ], start=1):
+                AssignmentCriterion.objects.create(
+                    assignment=assignment, title=title, max_points=mx, order=i)
         for i in range(1, 4):
             student = User.objects.filter(username=f"talaba{i}").first()
             if not student:
@@ -201,6 +210,11 @@ class Command(BaseCommand):
         from assessment.models import TeacherReview
         first = assignment.submissions.first()
         if first and hasattr(first, "ai_evaluation") and not hasattr(first, "teacher_review"):
+            # rubrika bo'lsa — mezon bo'yicha o'qituvchi ballari (AI bilan bir xil qilib)
+            for cs in first.criterion_scores.all():
+                if cs.teacher_score is None:
+                    cs.teacher_score = cs.ai_score
+                    cs.save(update_fields=["teacher_score"])
             TeacherReview.objects.get_or_create(
                 submission=first,
                 defaults={"teacher": ta.teacher, "final_score": first.ai_evaluation.score,

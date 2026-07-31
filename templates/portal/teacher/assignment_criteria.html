@@ -1,0 +1,25 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Mezonlar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ assignment.title }} — baholash mezonlari</h1></div>
+<div class="help" style="margin-bottom:14px">Mezon qo‘shsangiz, AI va o‘qituvchi ishni aynan shu mezonlar bo‘yicha baholaydi (rubrika).</div>
+{% if criteria %}
+<table class="grid"><thead><tr><th>Mezon</th><th>Maks ball</th><th></th></tr></thead><tbody>
+  {% for c in criteria %}<tr>
+    <td>{{ c.title }}</td><td>{{ c.max_points }}</td>
+    <td><form class="inline-form" method="post" action="{% url 'portal:teacher_criterion_delete' c.pk %}">{% csrf_token %}<button class="btn danger sm" type="submit">O‘chirish</button></form></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Hozircha mezon yo‘q — bu topshiriq umumiy bitta baho bilan baholanadi.</div>{% endif %}
+
+<div class="panel-card" style="max-width:520px;margin-top:16px">
+  <h2>Mezon qo‘shish</h2>
+  <form class="stack" method="post" action="{% url 'portal:teacher_criterion_add' assignment.pk %}">{% csrf_token %}
+    <label>Mezon nomi</label><input type="text" name="title" placeholder="Masalan: Mazmun to‘liqligi">
+    <label>Maksimal ball</label><input type="number" name="max_points" value="10" min="1">
+    <div style="margin-top:12px"><button class="btn" type="submit">Qo‘shish</button></div>
+  </form>
+</div>
+<a class="btn ghost" style="margin-top:14px" href="{% url 'portal:teacher_submissions' assignment.pk %}">← Topshirilgan ishlar</a>
+{% endblock %}

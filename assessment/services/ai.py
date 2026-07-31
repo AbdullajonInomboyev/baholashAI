@@ -125,9 +125,13 @@ def _clamp(value, low, high, default):
 # ---------------------------------------------------------------- baholash
 
 def evaluate_submission(submission: Submission):
-    """Topshirilgan ishni AI baholaydi. Kalit bo'lsa haqiqiy, bo'lmasa mock."""
+    """Topshirilgan ishni AI baholaydi. Rubrika (mezonlar) bo'lsa — har bir
+    mezon bo'yicha; bo'lmasa — umumiy bitta baho. Kalit bo'lsa haqiqiy, bo'lmasa mock."""
     assignment = submission.assignment
     model = model_for_assignment_type(assignment.assignment_type)
+    criteria = list(assignment.criteria.all())
+    if criteria:
+        return _evaluate_with_rubric(submission, model, criteria)
 
     score, feedback = None, None
     answer = (submission.text_answer or "").strip()
@@ -160,6 +164,61 @@ def evaluate_submission(submission: Submission):
         submission.status = Submission.Status.AI_EVALUATED
         submission.save(update_fields=["status"])
     return score
+
+
+def _evaluate_with_rubric(submission, model, criteria):
+    """Har bir mezon bo'yicha AI baho + izoh, so'ng umumiy foiz."""
+    from assessment.models import CriterionScore
+
+    assignment = submission.assignment
+    answer = (submission.text_answer or "").strip()
+    ai_scores = {}   # criterion_id -> (score, comment)
+
+    if answer:
+        lines = "\n".join(f"{i+1}. {c.title} (maks {c.max_points} ball)"
+                          for i, c in enumerate(criteria))
+        system = (
+            "Sen universitet o'qituvchisining yordamchisisan. Talaba javobini "
+            "berilgan mezonlar bo'yicha baholaysan. Har bir mezon uchun 0 dan "
+            "mezonning maksimal balligacha ball qo'y. Faqat JSON qaytar: "
+            '{"scores":[{"i":<mezon raqami>,"score":<ball>,"comment":"<izoh>"}]}.'
+        )
+        user = (f"Topshiriq: {assignment.title}\nTavsif: {assignment.description or '—'}\n\n"
+                f"Mezonlar:\n{lines}\n\nTalaba javobi:\n{answer[:4000]}")
+        parsed = _extract_json(_call_llm(model, system, user))
+        if parsed and isinstance(parsed.get("scores"), list):
+            for item in parsed["scores"]:
+                idx = item.get("i")
+                if isinstance(idx, int) and 1 <= idx <= len(criteria):
+                    crit = criteria[idx - 1]
+                    ai_scores[crit.id] = (
+                        _clamp(item.get("score"), 0, crit.max_points, None),
+                        str(item.get("comment", "")).strip(),
+                    )
+
+    total_max = sum(c.max_points for c in criteria) or 1
+    earned = 0
+    for c in criteria:
+        sc, comment = ai_scores.get(c.id, (None, ""))
+        if sc is None:  # mock
+            sc = _pseudo(f"crit-{submission.pk}-{c.id}", int(c.max_points * 0.5), c.max_points)
+            comment = comment or "Namunaviy AI izohi: mezon asosan qondirilgan."
+        earned += sc
+        CriterionScore.objects.update_or_create(
+            submission=submission, criterion=c,
+            defaults={"ai_score": Decimal(sc), "comment": comment},
+        )
+
+    overall = round(earned / total_max * 100, 2)
+    AIEvaluation.objects.update_or_create(
+        submission=submission,
+        defaults={"ai_model": model, "score": Decimal(str(overall)),
+                  "feedback": "Rubrika bo'yicha baholandi (mezonlar tafsiloti quyida)."},
+    )
+    if submission.status == Submission.Status.SUBMITTED:
+        submission.status = Submission.Status.AI_EVALUATED
+        submission.save(update_fields=["status"])
+    return overall
 
 
 def review_resource(resource: Resource):

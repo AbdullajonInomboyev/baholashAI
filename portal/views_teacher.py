@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from accounts.models import Role
 from assessment.models import (
-    Assignment, AssignmentType, Submission, TeacherReview,
+    Assignment, AssignmentCriterion, AssignmentType, CriterionScore, Submission, TeacherReview,
 )
 from assessment.services import ai
 from core.audit import log_action
@@ -171,3 +171,89 @@ def _get_submission(request, submission_pk):
     return get_object_or_404(
         Submission.objects.select_related("assignment", "ai_evaluation"),
         pk=submission_pk, assignment__teacher_assignment__in=mine)
+
+
+# ---------------- Rubrika (mezonlar) ----------------
+
+from decimal import Decimal  # noqa: E402
+
+
+@role_required(Role.TEACHER)
+def assignment_criteria(request, assignment_pk):
+    mine = _my_assignments(request.user)
+    assignment = get_object_or_404(Assignment, pk=assignment_pk, teacher_assignment__in=mine)
+    ctx = _base(request)
+    ctx.update({"active": "courses", "assignment": assignment,
+                "criteria": assignment.criteria.all()})
+    return render(request, "portal/teacher/assignment_criteria.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def criterion_add(request, assignment_pk):
+    mine = _my_assignments(request.user)
+    assignment = get_object_or_404(Assignment, pk=assignment_pk, teacher_assignment__in=mine)
+    title = (request.POST.get("title") or "").strip()
+    try:
+        max_points = int(request.POST.get("max_points") or 10)
+    except ValueError:
+        max_points = 10
+    if title and max_points > 0:
+        AssignmentCriterion.objects.create(
+            assignment=assignment, title=title, max_points=max_points,
+            order=assignment.criteria.count() + 1)
+        messages.success(request, "Mezon qo‘shildi.")
+    else:
+        messages.error(request, "Mezon nomi va ballini kiriting.")
+    return redirect("portal:teacher_assignment_criteria", assignment_pk=assignment_pk)
+
+
+@role_required(Role.TEACHER)
+def criterion_delete(request, pk):
+    criterion = get_object_or_404(
+        AssignmentCriterion, pk=pk,
+        assignment__teacher_assignment__in=_my_assignments(request.user))
+    a_pk = criterion.assignment_id
+    criterion.delete()
+    messages.success(request, "Mezon o‘chirildi.")
+    return redirect("portal:teacher_assignment_criteria", assignment_pk=a_pk)
+
+
+@role_required(Role.TEACHER)
+def rubric_grade(request, submission_pk):
+    submission = _get_submission(request, submission_pk)
+    criteria = list(submission.assignment.criteria.all())
+    scores = {cs.criterion_id: cs for cs in submission.criterion_scores.all()}
+
+    if request.method == "POST":
+        total_max = sum(c.max_points for c in criteria) or 1
+        earned = 0
+        modified = False
+        for c in criteria:
+            raw = request.POST.get(f"score_{c.id}")
+            try:
+                val = max(0, min(c.max_points, float(raw)))
+            except (TypeError, ValueError):
+                val = 0
+            cs, _ = CriterionScore.objects.update_or_create(
+                submission=submission, criterion=c,
+                defaults={})
+            cs.teacher_score = Decimal(str(val))
+            cs.save(update_fields=["teacher_score"])
+            if cs.ai_score is not None and float(cs.ai_score) != val:
+                modified = True
+            earned += val
+        final = round(earned / total_max * 100, 2)
+        TeacherReview.objects.update_or_create(
+            submission=submission,
+            defaults={"teacher": request.user, "final_score": Decimal(str(final)),
+                      "status": TeacherReview.Status.MODIFIED if modified else TeacherReview.Status.CONFIRMED})
+        submission.status = Submission.Status.TEACHER_REVIEWED
+        submission.save(update_fields=["status"])
+        log_action(request.user, "rubric_grade", "Submission", submission.pk, new={"final": str(final)})
+        messages.success(request, f"Rubrika bo‘yicha yakuniy baho: {final}%.")
+        return redirect("portal:teacher_submissions", assignment_pk=submission.assignment_id)
+
+    rows = [{"c": c, "cs": scores.get(c.id)} for c in criteria]
+    ctx = _base(request)
+    ctx.update({"active": "courses", "submission": submission, "rows": rows})
+    return render(request, "portal/teacher/rubric_grade.html", ctx)

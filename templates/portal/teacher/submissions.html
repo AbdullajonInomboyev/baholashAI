@@ -2,7 +2,7 @@
 {% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
 {% block crumbs %}Topshiriq / Ishlar{% endblock %}
 {% block content %}
-<div class="page-head"><h1>{{ assignment.title }} — topshirilgan ishlar</h1></div>
+<div class="page-head"><h1>{{ assignment.title }} — topshirilgan ishlar</h1><div class="spacer"></div><a class="btn ghost sm" href="{% url 'portal:teacher_assignment_criteria' assignment.pk %}">Mezonlar (rubrika)</a></div>
 <div class="help" style="margin-bottom:12px">AI qo‘ygan bahoni tasdiqlang yoki yakuniy bahoni qo‘lda o‘zgartiring.</div>
 {% if submissions %}
 <table class="grid"><thead><tr><th>Talaba</th><th>Holat</th><th>AI baho</th><th>Yakuniy</th><th>Amal</th></tr></thead><tbody>
@@ -12,7 +12,9 @@
     <td>{% if s.ai_evaluation %}{{ s.ai_evaluation.score }}{% else %}—{% endif %}</td>
     <td>{% if s.teacher_review %}<strong>{{ s.teacher_review.final_score }}</strong> {% if s.teacher_review.status == 'modified' %}<span class="tag mut">o‘zgartirilgan</span>{% endif %}{% else %}—{% endif %}</td>
     <td class="actions">
-      {% if s.ai_evaluation and not s.teacher_review %}
+      {% if assignment.criteria.all and not s.teacher_review %}
+        <a class="btn sm" href="{% url 'portal:teacher_rubric_grade' s.pk %}">Rubrika baholash</a>
+      {% elif s.ai_evaluation and not s.teacher_review %}
         <form class="inline-form" method="post" action="{% url 'portal:teacher_review_confirm' s.pk %}">{% csrf_token %}
           <button class="btn sm" type="submit">Tasdiqlash</button></form>
         <form class="inline-form" method="post" action="{% url 'portal:teacher_review_override' s.pk %}">{% csrf_token %}

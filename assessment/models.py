@@ -249,3 +249,41 @@ class QuizAnswer(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["attempt", "question"], name="uniq_quiz_answer")
         ]
+
+
+# ============ Rubrika (baholash mezonlari) ============
+
+class AssignmentCriterion(models.Model):
+    assignment = models.ForeignKey(
+        Assignment, on_delete=models.CASCADE, related_name="criteria", verbose_name="Topshiriq"
+    )
+    title = models.CharField("Mezon", max_length=200)
+    max_points = models.PositiveIntegerField("Maksimal ball", default=10)
+    order = models.PositiveIntegerField("Tartib", default=0)
+
+    class Meta:
+        verbose_name = "Baholash mezoni"
+        verbose_name_plural = "Baholash mezonlari"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.title} ({self.max_points})"
+
+
+class CriterionScore(models.Model):
+    submission = models.ForeignKey(
+        Submission, on_delete=models.CASCADE, related_name="criterion_scores"
+    )
+    criterion = models.ForeignKey(
+        AssignmentCriterion, on_delete=models.CASCADE, related_name="scores"
+    )
+    ai_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    teacher_score = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    comment = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = "Mezon bahosi"
+        verbose_name_plural = "Mezon baholari"
+        constraints = [
+            models.UniqueConstraint(fields=["submission", "criterion"], name="uniq_criterion_score")
+        ]

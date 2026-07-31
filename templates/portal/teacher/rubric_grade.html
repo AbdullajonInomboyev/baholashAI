@@ -1,0 +1,23 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Rubrika baholash{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Rubrika bo‘yicha baholash</h1></div>
+<div class="help" style="margin-bottom:12px">Talaba: <b>{{ submission.student.full_name|default:submission.student.username }}</b>{% if submission.text_answer %} · javob yozilgan{% endif %}</div>
+{% if submission.text_answer %}<div class="panel-card"><b>Talaba javobi:</b><div class="help" style="white-space:pre-wrap;color:var(--ink)">{{ submission.text_answer }}</div></div>{% endif %}
+<form method="post" action="{% url 'portal:teacher_rubric_grade' submission.pk %}">{% csrf_token %}
+<table class="grid"><thead><tr><th>Mezon</th><th>Maks</th><th>AI bahosi</th><th>AI izohi</th><th>Sizning bahoyingiz</th></tr></thead><tbody>
+  {% for r in rows %}<tr>
+    <td>{{ r.c.title }}</td>
+    <td>{{ r.c.max_points }}</td>
+    <td>{% if r.cs.ai_score is not None %}{{ r.cs.ai_score }}{% else %}—{% endif %}</td>
+    <td class="help" style="color:var(--ink)">{{ r.cs.comment|default:"—" }}</td>
+    <td><input type="number" name="score_{{ r.c.id }}" step="0.5" min="0" max="{{ r.c.max_points }}"
+        value="{% if r.cs.teacher_score is not None %}{{ r.cs.teacher_score }}{% elif r.cs.ai_score is not None %}{{ r.cs.ai_score }}{% endif %}"
+        style="width:80px;padding:6px;border:1px solid var(--line);border-radius:6px"></td>
+  </tr>{% endfor %}
+</tbody></table>
+<div style="margin-top:14px"><button class="btn" type="submit">Yakuniy bahoni saqlash</button>
+  <a class="btn ghost" href="{% url 'portal:teacher_submissions' submission.assignment_id %}">Bekor</a></div>
+</form>
+{% endblock %}

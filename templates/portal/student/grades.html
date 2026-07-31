@@ -11,7 +11,19 @@
     <td>{% if s.ai_evaluation %}{{ s.ai_evaluation.score }}{% else %}—{% endif %}</td>
     <td>{% if s.teacher_review %}<strong>{{ s.teacher_review.final_score }}</strong>{% else %}<span class="help">kutilmoqda</span>{% endif %}</td>
     <td>{% if s.status == 'teacher_reviewed' %}<span class="tag ok">Yakunlangan</span>{% else %}<span class="tag warn">Jarayonda</span>{% endif %}</td>
-  </tr>{% endfor %}
+  </tr>
+  {% if s.criterion_scores.all %}
+  <tr><td colspan="5" style="background:var(--surface-2)">
+    <details><summary style="cursor:pointer;color:var(--brand);font-size:13px">Rubrika (mezonlar) bo‘yicha tafsilot</summary>
+      <table class="grid" style="margin-top:8px"><thead><tr><th>Mezon</th><th>Maks</th><th>AI</th><th>O‘qituvchi</th><th>Izoh</th></tr></thead><tbody>
+        {% for cs in s.criterion_scores.all %}<tr><td>{{ cs.criterion.title }}</td><td>{{ cs.criterion.max_points }}</td>
+          <td>{{ cs.ai_score|default:"—" }}</td><td>{{ cs.teacher_score|default:"—" }}</td>
+          <td class="help" style="color:var(--ink)">{{ cs.comment|default:"—" }}</td></tr>{% endfor %}
+      </tbody></table>
+    </details>
+  </td></tr>
+  {% endif %}
+  {% endfor %}
 </tbody></table>
 <div class="help" style="margin-top:8px">AI bahosi dastlabki; yakuniy bahoni o‘qituvchi tasdiqlaydi.</div>
 {% else %}<div class="empty">Hali baho yo‘q.</div>{% endif %}

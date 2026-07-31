@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from .models import (
-    AIEvaluation, AIModel, AIModuleConfig, Assignment, AssignmentType,
+    AIEvaluation, AIModel, AIModuleConfig, Assignment, AssignmentCriterion, AssignmentType,
     Submission, TeacherReview,
 )
 
@@ -17,8 +17,14 @@ class AIModuleConfigAdmin(admin.ModelAdmin):
     list_display = ("assignment_type", "ai_model")
 
 
+class CriterionInline(admin.TabularInline):
+    model = AssignmentCriterion
+    extra = 0
+
+
 @admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
+    inlines = [CriterionInline]
     list_display = ("title", "assignment_type", "status", "due_date")
     list_filter = ("status", "assignment_type")
 

@@ -98,6 +98,7 @@ def grades(request):
     ctx = _base(request)
     subs = (Submission.objects.filter(student=request.user)
             .select_related("assignment__assignment_type", "ai_evaluation", "teacher_review")
+            .prefetch_related("criterion_scores__criterion")
             .order_by("-created_at"))
     ctx.update({"active": "grades", "submissions": subs})
     return render(request, "portal/student/grades.html", ctx)
