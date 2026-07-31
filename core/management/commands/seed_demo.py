@@ -189,7 +189,10 @@ class Command(BaseCommand):
                 continue
             submission, created = Submission.objects.get_or_create(
                 assignment=assignment, student=student,
-                defaults={"file": "submissions/demo.pdf", "status": Submission.Status.SUBMITTED},
+                defaults={"text_answer": (
+                    f"{student.full_name or student.username}ning javobi: mavzu bo‘yicha "
+                    "asosiy tushunchalar, ta‘riflar va amaliy misollar keltirilgan."),
+                    "status": Submission.Status.SUBMITTED},
             )
             if created:
                 ai.evaluate_submission(submission)

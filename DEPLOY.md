@@ -63,6 +63,18 @@ Render har `push` da avtomatik qayta deploy qiladi.
 - `CSRF_TRUSTED_ORIGINS=https://*.onrender.com`
 - `DATABASE_URL` — bazadan avtomatik ulanadi
 
+## AI kalitini ulash (haqiqiy baholash)
+Kalit qo‘shilmasa, AI **mock** (namunaviy) baho beradi — ilova ishlayveradi.
+Haqiqiy AI baholash uchun Render’da web-servis → **Environment** → quyidagilardan
+birini qo‘shing (qaysi provayder ishlatilsa):
+- `ANTHROPIC_API_KEY` = sk-ant-...
+- `OPENAI_API_KEY` = sk-...
+- `GEMINI_API_KEY` = ...
+So‘ng Admin → **AI modellar** da model ID to‘g‘ri ekanini tekshiring
+(masalan `claude-3-5-sonnet-...`, `gpt-4o`, `gemini-1.5-pro`) va topshiriq
+turiga bog‘lang (**AI modul sozlamalari**). Talaba **matn javob** yozib topshirsa,
+AI aynan shu matnni baholaydi.
+
 ## Eslatmalar
 - Bepul rejada server 15 daqiqa harakatsizlikdan keyin “uxlaydi”; birinchi soʻrov 30–60 soniya sekin ochiladi.
 - Fayllar (yuklangan resurs/rasm) bepul serverda vaqtincha saqlanadi (deployʼda oʻchishi mumkin). Doimiy saqlash uchun keyinroq S3/Cloudinary ulanadi.

@@ -82,12 +82,14 @@ def submit(request, pk):
     if form.is_valid():
         submission, _ = Submission.objects.update_or_create(
             assignment=assignment, student=request.user,
-            defaults={"file": form.cleaned_data["file"], "status": Submission.Status.SUBMITTED})
+            defaults={"file": form.cleaned_data.get("file"),
+                      "text_answer": form.cleaned_data.get("text_answer", ""),
+                      "status": Submission.Status.SUBMITTED})
         # topshirilishi bilan AI baholaydi
         ai.evaluate_submission(submission)
         messages.success(request, "Ish topshirildi va AI baholadi.")
     else:
-        messages.error(request, "Fayl tanlanmadi.")
+        messages.error(request, form.errors.get("__all__", ["Ma‘lumot kiritilmadi."])[0])
     return redirect("portal:student_assignment_detail", pk=pk)
 
 

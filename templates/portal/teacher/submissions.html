@@ -20,7 +20,17 @@
           <button class="btn ghost sm" type="submit">O‘zgartirish</button></form>
       {% elif s.teacher_review %}<span class="tag ok">Baholangan</span>{% else %}<span class="help">AI baholamoqda…</span>{% endif %}
     </td>
-  </tr>{% endfor %}
+  </tr>
+  {% if s.text_answer or s.file or s.ai_evaluation %}
+  <tr><td colspan="5" style="background:var(--surface-2)">
+    <details><summary style="cursor:pointer;color:var(--brand);font-size:13px">Javob va AI tahlilini ko‘rish</summary>
+      {% if s.text_answer %}<div style="margin-top:8px"><b>Matn javob:</b><div class="help" style="white-space:pre-wrap;color:var(--ink)">{{ s.text_answer }}</div></div>{% endif %}
+      {% if s.file %}<div style="margin-top:6px"><a href="{{ s.file.url }}">📎 Yuklangan fayl</a></div>{% endif %}
+      {% if s.ai_evaluation %}<div style="margin-top:8px"><b>AI izohi ({{ s.ai_evaluation.ai_model.name|default:"—" }}):</b> <span class="help" style="color:var(--ink)">{{ s.ai_evaluation.feedback }}</span></div>{% endif %}
+    </details>
+  </td></tr>
+  {% endif %}
+  {% endfor %}
 </tbody></table>
 {% else %}<div class="empty">Hali ish topshirilmagan.</div>{% endif %}
 {% endblock %}

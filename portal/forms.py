@@ -156,4 +156,14 @@ class GradeForm(forms.Form):
 
 
 class SubmissionForm(forms.Form):
-    file = forms.FileField(label="Ish fayli")
+    text_answer = forms.CharField(
+        label="Javob (onlayn matn)", required=False,
+        widget=forms.Textarea(attrs={"rows": 8, "placeholder": "Javobingizni shu yerga yozing…"}),
+    )
+    file = forms.FileField(label="Yoki ish faylini yuklang", required=False)
+
+    def clean(self):
+        cleaned = super().clean()
+        if not cleaned.get("text_answer") and not cleaned.get("file"):
+            raise forms.ValidationError("Matn javob yozing yoki fayl yuklang.")
+        return cleaned

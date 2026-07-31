@@ -21,7 +21,9 @@
 <div class="panel-card" style="max-width:520px">
   <h2>{% if submission %}Qayta topshirish{% else %}Ish topshirish{% endif %}</h2>
   <form class="stack" method="post" enctype="multipart/form-data" action="{% url 'portal:student_submit' assignment.pk %}">{% csrf_token %}
-    {{ form.file }}
+    <label>{{ form.text_answer.label }}</label>{{ form.text_answer }}
+    <label style="margin-top:12px">{{ form.file.label }}</label>{{ form.file }}
+    <div class="help">Matn javob yozing yoki fayl yuklang (yoki ikkalasi). Matn yozsangiz, AI aynan uni baholaydi.</div>
     <div style="margin-top:14px"><button class="btn" type="submit">Topshirish</button></div>
   </form>
 </div>

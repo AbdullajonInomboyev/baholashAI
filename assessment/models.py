@@ -93,6 +93,7 @@ class Submission(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="submissions"
     )
     file = models.FileField("Fayl", upload_to="submissions/", null=True, blank=True)
+    text_answer = models.TextField("Onlayn matn javob", blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.SUBMITTED)
     created_at = models.DateTimeField(default=timezone.now)
 
