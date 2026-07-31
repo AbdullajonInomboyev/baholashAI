@@ -1,0 +1,29 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Baholar jurnali{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Baholar jurnali</h1><div class="spacer"></div>
+  {% if courses %}<select class="role-switch" onchange="location.href='?course='+this.value">
+    {% for ta in courses %}<option value="{{ ta.pk }}" {% if selected and ta.pk == selected.pk %}selected{% endif %}>{{ ta.department_course.course.code }} — {{ ta.department_course.course.name }}</option>{% endfor %}
+  </select>{% endif %}
+</div>
+{% if selected %}
+  <div class="help" style="margin-bottom:12px">Fan: <b>{{ course.code }} — {{ course.name }}</b>. Baho — o‘qituvchi tasdig‘i bo‘lsa yakuniy, aks holda AI bahosi.</div>
+  {% if rows %}
+  <div style="overflow-x:auto">
+  <table class="grid"><thead><tr>
+    <th style="position:sticky;left:0;background:var(--surface-2)">Talaba</th>
+    {% for col in columns %}<th>{% if col.kind == 'q' %}📝 {% endif %}{{ col.title }}</th>{% endfor %}
+    <th>O‘rtacha</th>
+  </tr></thead><tbody>
+    {% for r in rows %}<tr>
+      <td style="position:sticky;left:0;background:#fff;font-weight:500">{{ r.student.full_name|default:r.student.username }}</td>
+      {% for v in r.cells %}<td>{% if v is not None %}{{ v }}{% else %}<span class="help">—</span>{% endif %}</td>{% endfor %}
+      <td>{% if r.avg is not None %}<span class="tag {% if r.avg >= 60 %}ok{% else %}warn{% endif %}">{{ r.avg }}</span>{% else %}—{% endif %}</td>
+    </tr>{% endfor %}
+  </tbody></table>
+  </div>
+  <div class="help" style="margin-top:8px">📝 — test. Ustunlar: topshiriqlar va testlar.</div>
+  {% else %}<div class="empty">Bu fanga biriktirilgan talaba topilmadi.</div>{% endif %}
+{% else %}<div class="empty">Sizga biriktirilgan fan yo‘q.</div>{% endif %}
+{% endblock %}

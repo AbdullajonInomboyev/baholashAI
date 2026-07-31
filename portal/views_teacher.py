@@ -257,3 +257,68 @@ def rubric_grade(request, submission_pk):
     ctx = _base(request)
     ctx.update({"active": "courses", "submission": submission, "rows": rows})
     return render(request, "portal/teacher/rubric_grade.html", ctx)
+
+
+# ---------------- Baholar jurnali (gradebook) ----------------
+
+from django.contrib.auth import get_user_model  # noqa: E402
+
+
+@role_required(Role.TEACHER)
+def gradebook(request):
+    from assessment.models import Quiz, QuizAttempt
+    User = get_user_model()
+    mine = _my_assignments(request.user)
+    ta_pk = request.GET.get("course")
+    selected = (mine.filter(pk=ta_pk).first() if ta_pk else mine.first())
+
+    ctx = _base(request)
+    ctx.update({"active": "gradebook", "courses": mine, "selected": selected})
+
+    if selected:
+        course = selected.department_course.course
+        cur = course.curriculum
+        students = list(User.objects.filter(
+            enrollments__direction=cur.direction,
+            enrollments__study_form=cur.study_form).distinct().order_by("full_name", "username"))
+
+        assignments = list(Assignment.objects.filter(teacher_assignment=selected)
+                           .exclude(status=Assignment.Status.DRAFT).order_by("created_at"))
+        quizzes = list(Quiz.objects.filter(teacher_assignment=selected).order_by("created_at"))
+
+        # baho xaritalari
+        sub_map = {}
+        for s in (Submission.objects.filter(assignment__in=assignments)
+                  .select_related("teacher_review", "ai_evaluation")):
+            score = None
+            if getattr(s, "teacher_review", None) and s.teacher_review.final_score is not None:
+                score = s.teacher_review.final_score
+            elif getattr(s, "ai_evaluation", None) and s.ai_evaluation.score is not None:
+                score = s.ai_evaluation.score
+            sub_map[(s.assignment_id, s.student_id)] = score
+        quiz_map = {(a.quiz_id, a.student_id): a.score
+                    for a in QuizAttempt.objects.filter(quiz__in=quizzes, submitted_at__isnull=False)}
+
+        columns = ([{"kind": "a", "id": a.id, "title": a.title} for a in assignments]
+                   + [{"kind": "q", "id": q.id, "title": q.title} for q in quizzes])
+
+        rows = []
+        for st in students:
+            cells = []
+            vals = []
+            for a in assignments:
+                v = sub_map.get((a.id, st.id))
+                cells.append(v)
+                if v is not None:
+                    vals.append(float(v))
+            for q in quizzes:
+                v = quiz_map.get((q.id, st.id))
+                cells.append(v)
+                if v is not None:
+                    vals.append(float(v))
+            avg = round(sum(vals) / len(vals), 1) if vals else None
+            rows.append({"student": st, "cells": cells, "avg": avg})
+
+        ctx.update({"columns": columns, "rows": rows, "course": course})
+
+    return render(request, "portal/teacher/gradebook.html", ctx)

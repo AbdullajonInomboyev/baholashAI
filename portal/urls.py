@@ -80,6 +80,7 @@ urlpatterns = [
     path("oqituvchi/ish/<int:submission_pk>/rubrika/", views_teacher.rubric_grade, name="teacher_rubric_grade"),
     path("oqituvchi/ish/<int:submission_pk>/tasdiqlash/", views_teacher.review_confirm, name="teacher_review_confirm"),
     path("oqituvchi/ish/<int:submission_pk>/ozgartirish/", views_teacher.review_override, name="teacher_review_override"),
+    path("oqituvchi/jurnal/", views_teacher.gradebook, name="teacher_gradebook"),
     path("oqituvchi/resurslar/", views_teacher.resources, name="teacher_resources"),
     path("oqituvchi/resurslar/yuklash/", views_teacher.resource_upload, name="teacher_resource_upload"),
 
