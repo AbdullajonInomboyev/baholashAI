@@ -1,10 +1,13 @@
 from django.urls import path
 
-from . import views, views_dept, views_quiz, views_student, views_teacher
+from . import views, views_common, views_dept, views_quiz, views_student, views_teacher
 
 app_name = "portal"
 
 urlpatterns = [
+    path("bildirishnomalar/", views_common.notifications, name="notifications"),
+    path("bildirishnoma/<int:pk>/", views_common.notification_open, name="notification_open"),
+    path("kalendar/", views_common.calendar, name="calendar"),
     path("", views.dashboard, name="dashboard"),
 
     path("kafedralar/", views.departments, name="departments"),

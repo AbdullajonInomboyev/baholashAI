@@ -9,6 +9,8 @@ from assessment.models import (
 )
 from assessment.services import ai
 from core.audit import log_action
+from core.notifications import notify, notify_many
+from django.urls import reverse
 from teaching.models import (
     Resource, ResourceLink, ResourceReview, TeacherAssignment,
 )
@@ -70,8 +72,12 @@ def assignment_form(request, pk, assignment_pk=None):
     form = AssignmentForm(request.POST or None, instance=instance)
     if request.method == "POST" and form.is_valid():
         assignment = form.save(commit=False)
+        is_new = assignment.pk is None
         assignment.teacher_assignment = ta
         assignment.save()
+        if is_new and assignment.status != Assignment.Status.DRAFT:
+            notify_many(_course_students(ta), f"Yangi topshiriq: {assignment.title}",
+                        reverse("portal:student_assignment_detail", args=[assignment.pk]))
         # tanlangan turga qaysi AI ishlashini ko‘rsatib beramiz
         model = ai.model_for_assignment_type(assignment.assignment_type)
         messages.success(request, f"Topshiriq saqlandi. Baholovchi AI: {model or '—'}.")
@@ -112,6 +118,8 @@ def review_confirm(request, submission_pk):
                   "status": TeacherReview.Status.CONFIRMED})
     submission.status = Submission.Status.TEACHER_REVIEWED
     submission.save(update_fields=["status"])
+    notify(submission.student, f"«{submission.assignment.title}» ishingizga baho qo‘yildi: {ai_score}",
+           reverse("portal:student_grades"))
     log_action(request.user, "review_confirm", "Submission", submission.pk, new={"score": str(ai_score)})
     messages.success(request, "AI bahosi tasdiqlandi.")
     return redirect("portal:teacher_submissions", assignment_pk=submission.assignment_id)
@@ -130,6 +138,8 @@ def review_override(request, submission_pk):
                       "status": TeacherReview.Status.MODIFIED})
         submission.status = Submission.Status.TEACHER_REVIEWED
         submission.save(update_fields=["status"])
+        notify(submission.student, f"«{submission.assignment.title}» yakuniy bahosi: {form.cleaned_data['final_score']}",
+               reverse("portal:student_grades"))
         log_action(request.user, "review_override", "Submission", submission.pk,
                    old={"ai_score": str(old)}, new={"final": str(form.cleaned_data["final_score"])})
         messages.success(request, "Yakuniy baho o‘zgartirildi.")
@@ -249,6 +259,8 @@ def rubric_grade(request, submission_pk):
                       "status": TeacherReview.Status.MODIFIED if modified else TeacherReview.Status.CONFIRMED})
         submission.status = Submission.Status.TEACHER_REVIEWED
         submission.save(update_fields=["status"])
+        notify(submission.student, f"«{submission.assignment.title}» rubrika bahosi: {final}%",
+               reverse("portal:student_grades"))
         log_action(request.user, "rubric_grade", "Submission", submission.pk, new={"final": str(final)})
         messages.success(request, f"Rubrika bo‘yicha yakuniy baho: {final}%.")
         return redirect("portal:teacher_submissions", assignment_pk=submission.assignment_id)
@@ -322,3 +334,10 @@ def gradebook(request):
         ctx.update({"columns": columns, "rows": rows, "course": course})
 
     return render(request, "portal/teacher/gradebook.html", ctx)
+
+
+def _course_students(ta):
+    User = get_user_model()
+    cur = ta.department_course.course.curriculum
+    return User.objects.filter(enrollments__direction=cur.direction,
+                               enrollments__study_form=cur.study_form).distinct()

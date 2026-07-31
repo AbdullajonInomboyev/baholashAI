@@ -1,0 +1,27 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/common/_simple_nav.html' %}{% endblock %}
+{% block crumbs %}Kalendar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Kalendar — muddatlar</h1></div>
+<div class="panel-card">
+  <h2>Yaqinlashayotgan muddatlar</h2>
+  {% if upcoming %}
+  <table class="grid"><thead><tr><th>Sana</th><th>Nomi</th><th>Turi</th><th>Qolgan</th></tr></thead><tbody>
+    {% for it in upcoming %}<tr>
+      <td><b>{{ it.date|date:"d.m.Y" }}</b></td>
+      <td>{{ it.title }}</td>
+      <td><span class="tag mut">{{ it.kind }}</span></td>
+      <td>{{ it.date|timeuntil:today }}</td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Yaqin muddat yo‘q.</div>{% endif %}
+</div>
+{% if past %}
+<div class="panel-card">
+  <h2>O‘tgan muddatlar</h2>
+  <table class="grid"><thead><tr><th>Sana</th><th>Nomi</th><th>Turi</th></tr></thead><tbody>
+    {% for it in past %}<tr><td>{{ it.date|date:"d.m.Y" }}</td><td>{{ it.title }}</td><td><span class="tag mut">{{ it.kind }}</span></td></tr>{% endfor %}
+  </tbody></table>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
+from datetime import timedelta
 
 from academics.models import (
     AcademicYear, Department, Direction, Faculty, StudentEnrollment, StudyForm,
@@ -167,6 +169,7 @@ class Command(BaseCommand):
 
         self._seed_assignments(assignments)
         self._seed_quiz(assignments)
+        self._seed_notifications()
 
     def _seed_assignments(self, assignments):
         """Namunaviy topshiriq + topshirilgan ishlar (o'qituvchi baholashi uchun)."""
@@ -182,7 +185,8 @@ class Command(BaseCommand):
         assignment, _ = Assignment.objects.get_or_create(
             teacher_assignment=ta, title="1-amaliy ish",
             defaults={"assignment_type": at, "status": Assignment.Status.OPEN,
-                      "description": "Berilgan mavzu bo'yicha amaliy ishni bajaring."},
+                      "description": "Berilgan mavzu bo'yicha amaliy ishni bajaring.",
+                      "due_date": timezone.localdate() + timedelta(days=7)},
         )
         # rubrika (baholash mezonlari)
         from assessment.models import AssignmentCriterion
@@ -280,7 +284,8 @@ class Command(BaseCommand):
         ta = assignments[0]
         quiz, created = Quiz.objects.get_or_create(
             teacher_assignment=ta, title="Kirish testi",
-            defaults={"description": "Fan bo‘yicha boshlang‘ich test.", "is_open": True},
+            defaults={"description": "Fan bo‘yicha boshlang‘ich test.", "is_open": True,
+                      "deadline": timezone.localdate() + timedelta(days=5)},
         )
         if created:
             q1 = Question.objects.create(quiz=quiz, text="2 + 2 = ?", kind=Question.Kind.SINGLE, points=1, order=1)
@@ -304,3 +309,12 @@ class Command(BaseCommand):
                     if correct:
                         a.selected.set([correct])
             quiz_service.grade_attempt(attempt)
+
+
+    def _seed_notifications(self):
+        from core.models import Notification
+        talaba = User.objects.filter(username="talaba1").first()
+        if talaba and not Notification.objects.filter(user=talaba).exists():
+            Notification.objects.create(user=talaba, message="Yangi topshiriq: 1-amaliy ish", url="/zamdekan/talaba/topshiriqlar/")
+            Notification.objects.create(user=talaba, message="Yangi test: Kirish testi", url="/zamdekan/talaba/testlar/")
+            Notification.objects.create(user=talaba, message="«1-amaliy ish» ishingizga baho qo\u2018yildi", url="/zamdekan/talaba/baholar/", is_read=True)

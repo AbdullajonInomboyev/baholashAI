@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AuditLog, ReportExport, ReviewRemark
+from .models import AuditLog, ReportExport, ReviewRemark, Notification
 
 
 @admin.register(ReportExport)
@@ -20,3 +20,6 @@ class AuditLogAdmin(admin.ModelAdmin):
     list_display = ("created_at", "user", "action", "entity", "entity_id")
     list_filter = ("action", "entity")
     search_fields = ("entity_id",)
+
+
+admin.site.register(Notification)

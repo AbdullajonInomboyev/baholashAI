@@ -1,0 +1,17 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/common/_simple_nav.html' %}{% endblock %}
+{% block crumbs %}Bildirishnomalar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Bildirishnomalar</h1></div>
+{% if items %}
+<div class="panel-card" style="padding:0">
+  {% for n in items %}
+  <a href="{% url 'portal:notification_open' n.pk %}" style="display:flex;gap:12px;align-items:center;padding:13px 18px;border-bottom:1px solid var(--line-2);text-decoration:none;color:var(--ink);{% if not n.is_read %}background:var(--brand-soft){% endif %}">
+    <span style="width:8px;height:8px;border-radius:50%;background:{% if n.is_read %}var(--line){% else %}var(--brand){% endif %};flex:none"></span>
+    <span style="flex:1">{{ n.message }}</span>
+    <span class="help">{{ n.created_at|date:"d.m H:i" }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% else %}<div class="empty">Bildirishnoma yo‘q.</div>{% endif %}
+{% endblock %}

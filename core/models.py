@@ -93,3 +93,21 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.user} · {self.action} · {self.entity}#{self.entity_id}"
+
+
+class Notification(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications"
+    )
+    message = models.CharField("Xabar", max_length=255)
+    url = models.CharField("Havola", max_length=255, blank=True)
+    is_read = models.BooleanField("O‘qilgan", default=False)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Bildirishnoma"
+        verbose_name_plural = "Bildirishnomalar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.user} · {self.message[:40]}"

@@ -160,6 +160,7 @@ class Quiz(models.Model):
     description = models.TextField("Tavsif", blank=True)
     time_limit_minutes = models.PositiveIntegerField("Vaqt chegarasi (daqiqa)", null=True, blank=True)
     is_open = models.BooleanField("Ochiq", default=True)
+    deadline = models.DateField("Muddat", null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:

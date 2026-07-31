@@ -3,6 +3,9 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 
 from academics.models import StudentEnrollment
+from core.notifications import notify_many
+from django.urls import reverse
+from django.contrib.auth import get_user_model
 from accounts.models import Role
 from assessment.models import Choice, Question, Quiz, QuizAnswer, QuizAttempt
 from assessment.services import quiz as quiz_service
@@ -36,6 +39,10 @@ def quiz_create(request):
     form = QuizForm(request.POST or None, teacher=request.user)
     if request.method == "POST" and form.is_valid():
         quiz = form.save()
+        cur = quiz.teacher_assignment.department_course.course.curriculum
+        students = get_user_model().objects.filter(
+            enrollments__direction=cur.direction, enrollments__study_form=cur.study_form).distinct()
+        notify_many(students, f"Yangi test: {quiz.title}", reverse("portal:student_quizzes"))
         messages.success(request, "Test yaratildi. Endi savol qo‘shing.")
         return redirect("portal:quiz_manage", pk=quiz.pk)
     return redirect("portal:teacher_quizzes")
