@@ -5,3 +5,5 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11a2 2 0 0 1 2 2v14a1 1 0 0 0-1-1H4z"/><path d="M20 6v14a1 1 0 0 0-1-1H8"/></svg><span>Fanlarim va topshiriqlar</span></a>
 <a href="{% url 'portal:teacher_resources' %}" class="{% if active == 'resources' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Resurslar</span></a>
+<a href="{% url 'portal:teacher_quizzes' %}" class="{% if active == 'quizzes' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span>Testlar</span></a>

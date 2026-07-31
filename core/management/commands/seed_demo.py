@@ -166,6 +166,7 @@ class Command(BaseCommand):
             )
 
         self._seed_assignments(assignments)
+        self._seed_quiz(assignments)
 
     def _seed_assignments(self, assignments):
         """Namunaviy topshiriq + topshirilgan ishlar (o'qituvchi baholashi uchun)."""
@@ -254,3 +255,38 @@ class Command(BaseCommand):
                     course=course, order=i,
                     defaults={"title": f"{name} — {i}-mavzu"},
                 )
+
+
+    def _seed_quiz(self, assignments):
+        """Namunaviy test + savollar + bitta talaba urinishi."""
+        from assessment.models import Choice, Question, Quiz, QuizAnswer, QuizAttempt
+        from assessment.services import quiz as quiz_service
+        if not assignments:
+            return
+        ta = assignments[0]
+        quiz, created = Quiz.objects.get_or_create(
+            teacher_assignment=ta, title="Kirish testi",
+            defaults={"description": "Fan bo‘yicha boshlang‘ich test.", "is_open": True},
+        )
+        if created:
+            q1 = Question.objects.create(quiz=quiz, text="2 + 2 = ?", kind=Question.Kind.SINGLE, points=1, order=1)
+            Choice.objects.create(question=q1, text="3", order=1)
+            Choice.objects.create(question=q1, text="4", is_correct=True, order=2)
+            Choice.objects.create(question=q1, text="5", order=3)
+            q2 = Question.objects.create(quiz=quiz, text="Python — dasturlash tili.", kind=Question.Kind.TRUE_FALSE, points=1, order=2)
+            Choice.objects.create(question=q2, text="To‘g‘ri", is_correct=True, order=1)
+            Choice.objects.create(question=q2, text="Noto‘g‘ri", order=2)
+            q3 = Question.objects.create(quiz=quiz, text="HTML qisqartmasidagi birinchi harf nimani bildiradi?", kind=Question.Kind.SHORT, points=1, correct_text="HyperText", order=3)
+        # talaba1 urinishi
+        student = User.objects.filter(username="talaba1").first()
+        if student and not QuizAttempt.objects.filter(quiz=quiz, student=student).exists():
+            attempt = QuizAttempt.objects.create(quiz=quiz, student=student)
+            for q in quiz.questions.all():
+                a = QuizAnswer.objects.create(attempt=attempt, question=q)
+                if q.kind == Question.Kind.SHORT:
+                    a.text_answer = "HyperText"; a.save()
+                else:
+                    correct = q.choices.filter(is_correct=True).first()
+                    if correct:
+                        a.selected.set([correct])
+            quiz_service.grade_attempt(attempt)

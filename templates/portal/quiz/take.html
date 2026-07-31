@@ -1,0 +1,22 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ quiz.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ quiz.title }}</h1></div>
+{% if quiz.description %}<div class="help" style="margin-bottom:12px">{{ quiz.description }}</div>{% endif %}
+<form method="post" action="{% url 'portal:quiz_take' quiz.pk %}">{% csrf_token %}
+  {% for q in questions %}
+  <div class="panel-card">
+    <div style="margin-bottom:8px"><b>{{ forloop.counter }}.</b> {{ q.text }} <span class="help">({{ q.points }} ball)</span></div>
+    {% if q.kind == 'short' %}
+      <input type="text" name="q{{ q.id }}" placeholder="Javobingiz" style="width:100%;max-width:420px;padding:9px;border:1px solid var(--line);border-radius:8px">
+    {% elif q.kind == 'multiple' %}
+      {% for ch in q.choices.all %}<label style="display:block;margin:4px 0"><input type="checkbox" name="q{{ q.id }}" value="{{ ch.id }}"> {{ ch.text }}</label>{% endfor %}
+    {% else %}
+      {% for ch in q.choices.all %}<label style="display:block;margin:4px 0"><input type="radio" name="q{{ q.id }}" value="{{ ch.id }}"> {{ ch.text }}</label>{% endfor %}
+    {% endif %}
+  </div>
+  {% endfor %}
+  <button class="btn" type="submit">Testni topshirish</button>
+</form>
+{% endblock %}

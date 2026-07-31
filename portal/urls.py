@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_dept, views_student, views_teacher
+from . import views, views_dept, views_quiz, views_student, views_teacher
 
 app_name = "portal"
 
@@ -85,4 +85,17 @@ urlpatterns = [
     path("talaba/topshiriq/<int:pk>/", views_student.assignment_detail, name="student_assignment_detail"),
     path("talaba/topshiriq/<int:pk>/topshirish/", views_student.submit, name="student_submit"),
     path("talaba/baholar/", views_student.grades, name="student_grades"),
+
+    # ---- Test / savol banki (o'qituvchi) ----
+    path("oqituvchi/testlar/", views_quiz.teacher_quizzes, name="teacher_quizzes"),
+    path("oqituvchi/testlar/yangi/", views_quiz.quiz_create, name="quiz_create"),
+    path("oqituvchi/testlar/<int:pk>/", views_quiz.quiz_manage, name="quiz_manage"),
+    path("oqituvchi/testlar/<int:pk>/savol/", views_quiz.quiz_question_add, name="quiz_question_add"),
+    path("oqituvchi/savol/<int:pk>/ochirish/", views_quiz.quiz_question_delete, name="quiz_question_delete"),
+    path("oqituvchi/testlar/<int:pk>/holat/", views_quiz.quiz_toggle, name="quiz_toggle"),
+    path("oqituvchi/testlar/<int:pk>/natijalar/", views_quiz.quiz_results, name="quiz_results"),
+    # ---- Test (talaba) ----
+    path("talaba/testlar/", views_quiz.student_quizzes, name="student_quizzes"),
+    path("talaba/testlar/<int:pk>/ishlash/", views_quiz.quiz_take, name="quiz_take"),
+    path("talaba/testlar/<int:pk>/natija/", views_quiz.quiz_result, name="quiz_result"),
 ]

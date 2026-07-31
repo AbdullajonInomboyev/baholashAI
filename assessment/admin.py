@@ -32,3 +32,36 @@ class SubmissionAdmin(admin.ModelAdmin):
 admin.site.register(AssignmentType)
 admin.site.register(AIEvaluation)
 admin.site.register(TeacherReview)
+
+
+from .models import Choice, Question, Quiz, QuizAttempt  # noqa: E402
+
+
+class ChoiceInline(admin.TabularInline):
+    model = Choice
+    extra = 0
+
+
+class QuestionInline(admin.TabularInline):
+    model = Question
+    extra = 0
+    show_change_link = True
+
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ("title", "teacher_assignment", "is_open", "created_at")
+    list_filter = ("is_open",)
+    inlines = [QuestionInline]
+
+
+@admin.register(Question)
+class QuestionAdmin(admin.ModelAdmin):
+    list_display = ("text", "quiz", "kind", "points")
+    list_filter = ("kind",)
+    inlines = [ChoiceInline]
+
+
+@admin.register(QuizAttempt)
+class QuizAttemptAdmin(admin.ModelAdmin):
+    list_display = ("quiz", "student", "score", "submitted_at")

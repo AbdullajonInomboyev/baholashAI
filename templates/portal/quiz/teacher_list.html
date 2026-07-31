@@ -1,0 +1,28 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Testlar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Testlar</h1></div>
+<div class="panel-card" style="max-width:620px">
+  <h2>Yangi test</h2>
+  <form class="stack" method="post" action="{% url 'portal:quiz_create' %}">{% csrf_token %}
+    <label>{{ form.teacher_assignment.label }}</label>{{ form.teacher_assignment }}
+    <label>{{ form.title.label }}</label>{{ form.title }}
+    <label>{{ form.description.label }}</label>{{ form.description }}
+    <label>{{ form.time_limit_minutes.label }}</label>{{ form.time_limit_minutes }}
+    <div style="margin-top:12px"><button class="btn" type="submit">Yaratish</button></div>
+  </form>
+</div>
+{% if quizzes %}
+<table class="grid"><thead><tr><th>Test</th><th>Fan</th><th>Savollar</th><th>Holat</th><th></th></tr></thead><tbody>
+  {% for q in quizzes %}<tr>
+    <td><a href="{% url 'portal:quiz_manage' q.pk %}">{{ q.title }}</a></td>
+    <td>{{ q.teacher_assignment.department_course.course.code }}</td>
+    <td>{{ q.question_count }}</td>
+    <td>{% if q.is_open %}<span class="tag ok">Ochiq</span>{% else %}<span class="tag mut">Yopiq</span>{% endif %}</td>
+    <td class="actions"><a class="btn ghost sm" href="{% url 'portal:quiz_manage' q.pk %}">Savollar</a>
+      <a class="btn ghost sm" href="{% url 'portal:quiz_results' q.pk %}">Natijalar</a></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Hali test yo‘q. Yuqoridan yarating.</div>{% endif %}
+{% endblock %}

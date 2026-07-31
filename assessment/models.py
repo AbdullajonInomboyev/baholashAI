@@ -147,3 +147,105 @@ class TeacherReview(models.Model):
 
     def __str__(self):
         return f"{self.submission} · {self.final_score}"
+
+
+# ============ Test / savol banki ============
+
+class Quiz(models.Model):
+    teacher_assignment = models.ForeignKey(
+        "teaching.TeacherAssignment", on_delete=models.CASCADE, related_name="quizzes",
+        verbose_name="Fan biriktiruvi"
+    )
+    title = models.CharField("Test nomi", max_length=200)
+    description = models.TextField("Tavsif", blank=True)
+    time_limit_minutes = models.PositiveIntegerField("Vaqt chegarasi (daqiqa)", null=True, blank=True)
+    is_open = models.BooleanField("Ochiq", default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Test"
+        verbose_name_plural = "Testlar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+    @property
+    def question_count(self):
+        return self.questions.count()
+
+    @property
+    def total_points(self):
+        return sum(q.points for q in self.questions.all()) or 0
+
+
+class Question(models.Model):
+    class Kind(models.TextChoices):
+        SINGLE = "single", "Bitta to‘g‘ri javob"
+        MULTIPLE = "multiple", "Bir nechta to‘g‘ri javob"
+        TRUE_FALSE = "true_false", "To‘g‘ri/Noto‘g‘ri"
+        SHORT = "short", "Qisqa matnli javob"
+
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
+    text = models.TextField("Savol matni")
+    kind = models.CharField("Turi", max_length=20, choices=Kind.choices, default=Kind.SINGLE)
+    points = models.PositiveIntegerField("Ball", default=1)
+    correct_text = models.CharField("To‘g‘ri javob (qisqa matn)", max_length=255, blank=True)
+    order = models.PositiveIntegerField("Tartib", default=0)
+
+    class Meta:
+        verbose_name = "Savol"
+        verbose_name_plural = "Savollar"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.text[:60]
+
+
+class Choice(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="choices")
+    text = models.CharField("Variant", max_length=255)
+    is_correct = models.BooleanField("To‘g‘ri", default=False)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Variant"
+        verbose_name_plural = "Variantlar"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return self.text[:40]
+
+
+class QuizAttempt(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="attempts")
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="quiz_attempts"
+    )
+    score = models.DecimalField("Ball (%)", max_digits=5, decimal_places=2, null=True, blank=True)
+    submitted_at = models.DateTimeField("Topshirilgan", null=True, blank=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Test urinishi"
+        verbose_name_plural = "Test urinishlari"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(fields=["quiz", "student"], name="uniq_quiz_attempt")
+        ]
+
+    def __str__(self):
+        return f"{self.student} · {self.quiz} · {self.score}"
+
+
+class QuizAnswer(models.Model):
+    attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name="answers")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    selected = models.ManyToManyField(Choice, blank=True)
+    text_answer = models.CharField(max_length=255, blank=True)
+    is_correct = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["attempt", "question"], name="uniq_quiz_answer")
+        ]

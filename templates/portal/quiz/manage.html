@@ -1,0 +1,41 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ quiz.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ quiz.title }}</h1><div class="spacer"></div>
+  <form class="inline-form" method="post" action="{% url 'portal:quiz_toggle' quiz.pk %}">{% csrf_token %}
+    <button class="btn ghost sm" type="submit">{% if quiz.is_open %}Yopish{% else %}Ochish{% endif %}</button></form>
+  <a class="btn ghost sm" href="{% url 'portal:quiz_results' quiz.pk %}">Natijalar</a>
+</div>
+<div class="help" style="margin-bottom:14px">Fan: {{ quiz.teacher_assignment.department_course.course }} · Savollar: {{ quiz.question_count }} · Jami ball: {{ quiz.total_points }} · {% if quiz.is_open %}<span class="tag ok">Ochiq</span>{% else %}<span class="tag mut">Yopiq</span>{% endif %}</div>
+
+{% if questions %}
+{% for q in questions %}
+<div class="panel-card">
+  <div style="display:flex;gap:10px"><b>{{ forloop.counter }}.</b><div style="flex:1">
+    <div>{{ q.text }}</div>
+    <div class="help">{{ q.get_kind_display }} · {{ q.points }} ball</div>
+    {% if q.kind == 'short' %}<div class="help">To‘g‘ri javob: <b>{{ q.correct_text }}</b></div>
+    {% else %}<ul style="margin:6px 0">{% for ch in q.choices.all %}<li>{% if ch.is_correct %}<span class="tag ok">✓</span>{% endif %} {{ ch.text }}</li>{% endfor %}</ul>{% endif %}
+  </div>
+  <form class="inline-form" method="post" action="{% url 'portal:quiz_question_delete' q.pk %}">{% csrf_token %}<button class="btn danger sm" type="submit">O‘chirish</button></form>
+  </div>
+</div>
+{% endfor %}
+{% else %}<div class="empty">Savol qo‘shing.</div>{% endif %}
+
+<div class="panel-card" style="max-width:640px">
+  <h2>Savol qo‘shish</h2>
+  <form class="stack" method="post" action="{% url 'portal:quiz_question_add' quiz.pk %}">{% csrf_token %}
+    <label>{{ form.text.label }}</label>{{ form.text }}
+    <div class="row"><div><label>{{ form.kind.label }}</label>{{ form.kind }}</div><div><label>{{ form.points.label }}</label>{{ form.points }}</div></div>
+    <div class="help" style="margin-top:8px">Turi bo‘yicha kerakli maydonlarni to‘ldiring:</div>
+    <label>Variantli savol uchun:</label>
+    <div class="row"><div>{{ form.choice_1 }} {{ form.correct_1 }} <span class="help">to‘g‘ri</span></div><div>{{ form.choice_2 }} {{ form.correct_2 }} <span class="help">to‘g‘ri</span></div></div>
+    <div class="row"><div>{{ form.choice_3 }} {{ form.correct_3 }} <span class="help">to‘g‘ri</span></div><div>{{ form.choice_4 }} {{ form.correct_4 }} <span class="help">to‘g‘ri</span></div></div>
+    <label>To‘g‘ri/Noto‘g‘ri uchun:</label>{{ form.tf_correct }}
+    <label>Qisqa matnli javob uchun to‘g‘ri javob:</label>{{ form.correct_text }}
+    <div style="margin-top:12px"><button class="btn" type="submit">Qo‘shish</button></div>
+  </form>
+</div>
+{% endblock %}
