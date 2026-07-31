@@ -3,6 +3,8 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Boshqaruv paneli</span></a>
 <a href="{% url 'portal:student_assignments' %}" class="{% if active == 'assignments' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 2h6a1 1 0 0 1 1 1v1h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2V3a1 1 0 0 1 1-1zM9 12l2 2 4-4"/></svg><span>Topshiriqlarim</span></a>
+<a href="{% url 'portal:student_materials' %}" class="{% if active == 'materials' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><span>Materiallar</span></a>
 <a href="{% url 'portal:student_quizzes' %}" class="{% if active == 'quizzes' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg><span>Testlar</span></a>
 <a href="{% url 'portal:student_grades' %}" class="{% if active == 'grades' %}active{% endif %}">

@@ -103,6 +103,7 @@ urlpatterns = [
     path("oqituvchi/testlar/<int:pk>/holat/", views_quiz.quiz_toggle, name="quiz_toggle"),
     path("oqituvchi/testlar/<int:pk>/natijalar/", views_quiz.quiz_results, name="quiz_results"),
     # ---- Test (talaba) ----
+    path("talaba/materiallar/", views_student.materials, name="student_materials"),
     path("talaba/testlar/", views_quiz.student_quizzes, name="student_quizzes"),
     path("talaba/testlar/<int:pk>/ishlash/", views_quiz.quiz_take, name="quiz_take"),
     path("talaba/testlar/<int:pk>/natija/", views_quiz.quiz_result, name="quiz_result"),

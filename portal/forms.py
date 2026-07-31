@@ -136,18 +136,41 @@ class AssignmentForm(forms.ModelForm):
 
 class ResourceUploadForm(forms.Form):
     title = forms.CharField(label="Sarlavha", max_length=255)
-    kind = forms.ChoiceField(label="Turi")
-    file = forms.FileField(label="Fayl")
+    kind = forms.ChoiceField(label="Turkum")
+    resource_format = forms.ChoiceField(label="Ko‘rinishi")
+    file = forms.FileField(label="Fayl (fayl turi uchun)", required=False)
+    url = forms.URLField(label="Havola (URL/Video uchun)", required=False)
+    content = forms.CharField(label="Matn (sahifa turi uchun)", required=False,
+                              widget=forms.Textarea(attrs={"rows": 5}))
     assignments = forms.MultipleChoiceField(
         label="Qaysi fanlarga biriktirilsin", widget=forms.CheckboxSelectMultiple, required=True)
+    topic = forms.ChoiceField(label="Mavzu (ixtiyoriy)", required=False)
 
     def __init__(self, *args, teacher_assignments=None, **kwargs):
         from teaching.models import Resource
         super().__init__(*args, **kwargs)
+        tas = list(teacher_assignments or [])
         self.fields["kind"].choices = Resource.Kind.choices
-        choices = [(ta.pk, f"{ta.department_course.course.code} — {ta.department_course.course.name}")
-                   for ta in (teacher_assignments or [])]
-        self.fields["assignments"].choices = choices
+        self.fields["resource_format"].choices = Resource.Format.choices
+        self.fields["assignments"].choices = [
+            (ta.pk, f"{ta.department_course.course.code} — {ta.department_course.course.name}")
+            for ta in tas]
+        topic_choices = [("", "— (mavzuga bog‘lamaslik) —")]
+        for ta in tas:
+            for t in ta.department_course.course.topics.all():
+                topic_choices.append((t.pk, f"{ta.department_course.course.code}: {t.title}"))
+        self.fields["topic"].choices = topic_choices
+
+    def clean(self):
+        c = super().clean()
+        fmt = c.get("resource_format")
+        if fmt == "file" and not c.get("file"):
+            raise forms.ValidationError("Fayl turi uchun fayl yuklang.")
+        if fmt in ("url", "video") and not c.get("url"):
+            raise forms.ValidationError("Havola/Video turi uchun URL kiriting.")
+        if fmt == "page" and not c.get("content"):
+            raise forms.ValidationError("Sahifa turi uchun matn kiriting.")
+        return c
 
 
 class GradeForm(forms.Form):

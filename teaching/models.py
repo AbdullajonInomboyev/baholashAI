@@ -73,12 +73,22 @@ class Resource(models.Model):
         VIDEO = "video", "Video"
         OTHER = "other", "Boshqa"
 
+    class Format(models.TextChoices):
+        FILE = "file", "Fayl"
+        URL = "url", "Havola (URL)"
+        PAGE = "page", "Matnli sahifa"
+        VIDEO = "video", "Video"
+
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="resources",
         verbose_name="Yuklagan o‘qituvchi",
     )
     title = models.CharField("Sarlavha", max_length=255)
-    file = models.FileField("Fayl", upload_to="resources/")
+    resource_format = models.CharField("Ko‘rinishi", max_length=10, choices=Format.choices,
+                                       default=Format.FILE)
+    file = models.FileField("Fayl", upload_to="resources/", null=True, blank=True)
+    url = models.URLField("Havola", blank=True)
+    content = models.TextField("Matn (sahifa uchun)", blank=True)
     kind = models.CharField("Turi", max_length=20, choices=Kind.choices, default=Kind.OTHER)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -97,6 +107,10 @@ class ResourceLink(models.Model):
     resource = models.ForeignKey(Resource, on_delete=models.CASCADE, related_name="links")
     teacher_assignment = models.ForeignKey(
         TeacherAssignment, on_delete=models.CASCADE, related_name="resource_links"
+    )
+    topic = models.ForeignKey(
+        "academics.SyllabusTopic", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="resource_links", verbose_name="Mavzu"
     )
 
     class Meta:

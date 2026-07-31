@@ -163,16 +163,31 @@ def resource_upload(request):
     mine = _my_assignments(request.user)
     form = ResourceUploadForm(request.POST, request.FILES, teacher_assignments=mine)
     if form.is_valid():
+        cd = form.cleaned_data
         resource = Resource.objects.create(
-            uploaded_by=request.user, title=form.cleaned_data["title"],
-            kind=form.cleaned_data["kind"], file=form.cleaned_data["file"])
-        for ta_id in form.cleaned_data["assignments"]:
-            ResourceLink.objects.get_or_create(resource=resource, teacher_assignment_id=int(ta_id))
+            uploaded_by=request.user, title=cd["title"], kind=cd["kind"],
+            resource_format=cd["resource_format"],
+            file=cd.get("file") if cd["resource_format"] == "file" else None,
+            url=cd.get("url", ""), content=cd.get("content", ""))
+        topic_id = cd.get("topic") or None
+        for ta_id in cd["assignments"]:
+            link_topic_id = None
+            if topic_id:
+                # mavzu shu fanning mavzusi bo‘lsagina bog‘laymiz
+                from academics.models import SyllabusTopic
+                t = SyllabusTopic.objects.filter(pk=topic_id).first()
+                ta = next((x for x in mine if x.pk == int(ta_id)), None)
+                if t and ta and t.course_id == ta.department_course.course_id:
+                    link_topic_id = t.pk
+            ResourceLink.objects.get_or_create(
+                resource=resource, teacher_assignment_id=int(ta_id),
+                defaults={"topic_id": link_topic_id})
         # yuklanishi bilan AI tahlili avtomatik shakllanadi
         ai.review_resource(resource)
-        messages.success(request, "Resurs yuklandi va AI tahliliga yuborildi.")
+        messages.success(request, "Resurs qo‘shildi va AI tahliliga yuborildi.")
     else:
-        messages.error(request, "Ma‘lumot to‘liq emas (fayl va kamida bitta fan tanlang).")
+        err = form.errors.get("__all__")
+        messages.error(request, err[0] if err else "Ma‘lumot to‘liq emas (fan tanlang).")
     return redirect("portal:teacher_resources")
 
 

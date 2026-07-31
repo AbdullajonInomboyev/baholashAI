@@ -228,8 +228,10 @@ def review_resource(resource: Resource):
 
     match, completeness, feedback = None, None, None
     topics = []
-    for link in resource.links.select_related("course").all() if hasattr(resource, "links") else []:
-        topics += [t.title for t in link.course.topics.all()]
+    for link in resource.links.select_related(
+            "teacher_assignment__department_course__course").all():
+        course = link.teacher_assignment.department_course.course
+        topics += [t.title for t in course.topics.all()]
     if topics:
         system = (
             "Sen o'quv resurslarini fan dasturi mavzulariga solishtiruvchi yordamchisan. "

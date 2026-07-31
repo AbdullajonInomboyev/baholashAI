@@ -1,0 +1,26 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}Materiallar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>O‘quv materiallari</h1></div>
+{% if groups %}
+  {% for course, links in groups %}
+  <div class="panel-card">
+    <h2>{{ course.code }} — {{ course.name }}</h2>
+    <table class="grid"><thead><tr><th>Material</th><th>Ko‘rinishi</th><th>Mavzu</th><th></th></tr></thead><tbody>
+      {% for l in links %}<tr>
+        <td>{{ l.resource.title }}</td>
+        <td><span class="tag mut">{{ l.resource.get_resource_format_display }}</span></td>
+        <td>{% if l.topic %}{{ l.topic.title }}{% else %}<span class="help">—</span>{% endif %}</td>
+        <td>
+          {% if l.resource.resource_format == 'file' and l.resource.file %}<a href="{{ l.resource.file.url }}">Yuklab olish</a>
+          {% elif l.resource.resource_format == 'video' and l.resource.url %}<a href="{{ l.resource.url }}" target="_blank">Videoni ochish</a>
+          {% elif l.resource.url %}<a href="{{ l.resource.url }}" target="_blank">Havolani ochish</a>
+          {% elif l.resource.content %}<details><summary style="cursor:pointer;color:var(--brand)">O‘qish</summary><div class="help" style="white-space:pre-wrap;color:var(--ink);margin-top:6px">{{ l.resource.content }}</div></details>{% endif %}
+        </td>
+      </tr>{% endfor %}
+    </tbody></table>
+  </div>
+  {% endfor %}
+{% else %}<div class="empty">Sizning fanlaringiz uchun material hali qo‘shilmagan.</div>{% endif %}
+{% endblock %}

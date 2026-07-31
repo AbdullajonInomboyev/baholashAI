@@ -102,3 +102,25 @@ def grades(request):
             .order_by("-created_at"))
     ctx.update({"active": "grades", "submissions": subs})
     return render(request, "portal/student/grades.html", ctx)
+
+
+@role_required(Role.STUDENT)
+def materials(request):
+    from teaching.models import ResourceLink
+    enrollments = _my_enrollments(request.user)
+    filt = Q()
+    for e in enrollments:
+        filt |= Q(teacher_assignment__department_course__course__curriculum__direction=e.direction,
+                  teacher_assignment__department_course__course__curriculum__study_form=e.study_form)
+    groups = {}
+    if filt:
+        links = (ResourceLink.objects.filter(filt)
+                 .select_related("resource", "topic",
+                                 "teacher_assignment__department_course__course")
+                 .order_by("teacher_assignment__department_course__course__code"))
+        for l in links:
+            course = l.teacher_assignment.department_course.course
+            groups.setdefault(course, []).append(l)
+    ctx = _base(request)
+    ctx.update({"active": "materials", "groups": list(groups.items())})
+    return render(request, "portal/student/materials.html", ctx)

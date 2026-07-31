@@ -8,22 +8,28 @@
   <form class="stack" method="post" enctype="multipart/form-data" action="{% url 'portal:teacher_resource_upload' %}">{% csrf_token %}
     <div class="row">
       <div><label>Sarlavha</label>{{ form.title }}</div>
-      <div><label>Turi</label>{{ form.kind }}</div>
+      <div><label>Turkum</label>{{ form.kind }}</div>
+      <div><label>Ko‘rinishi</label>{{ form.resource_format }}</div>
     </div>
-    <label>Fayl</label>{{ form.file }}
+    <label>Fayl (fayl turi uchun)</label>{{ form.file }}
+    <label style="margin-top:8px">Havola / Video URL</label>{{ form.url }}
+    <label style="margin-top:8px">Matn (sahifa turi uchun)</label>{{ form.content }}
     <label style="margin-top:10px">Qaysi fanlarga biriktirilsin (bittadan ko‘p bo‘lishi mumkin)</label>
     {{ form.assignments }}
-    <div style="margin-top:14px"><button class="btn gold" type="submit">Yuklash</button></div>
-    <div class="help">Yuklanishi bilan AI resursni mavzuga moslik va to‘liqlik bo‘yicha tahlil qiladi.</div>
+    <label style="margin-top:8px">Mavzu (ixtiyoriy)</label>{{ form.topic }}
+    <div style="margin-top:14px"><button class="btn gold" type="submit">Qo‘shish</button></div>
+    <div class="help">«Ko‘rinishi» bo‘yicha faqat kerakli maydonni to‘ldiring (fayl / havola / matn). AI resursni mavzuga moslik va to‘liqlik bo‘yicha tahlil qiladi.</div>
   </form>
 </div>
 {% if resources %}
-<table class="grid"><thead><tr><th>Sarlavha</th><th>Turi</th><th>Fanlar</th><th>AI moslik</th><th>To‘liqlik</th></tr></thead><tbody>
+<table class="grid"><thead><tr><th>Sarlavha</th><th>Ko‘rinishi</th><th>Turkum</th><th>Fanlar</th><th>AI moslik</th><th></th></tr></thead><tbody>
   {% for r in resources %}<tr>
-    <td>{{ r.title }}</td><td>{{ r.get_kind_display }}</td>
+    <td>{{ r.title }}</td>
+    <td><span class="tag mut">{{ r.get_resource_format_display }}</span></td>
+    <td>{{ r.get_kind_display }}</td>
     <td>{% for l in r.links.all %}<span class="tag mut">{{ l.teacher_assignment.department_course.course.code }}</span> {% endfor %}</td>
     <td>{% if r.review and r.review.match_score != None %}<span class="tag {% if r.review.match_score < 80 %}bad{% else %}ok{% endif %}">{{ r.review.match_score }}%</span>{% else %}<span class="tag warn">Tahlilda</span>{% endif %}</td>
-    <td>{% if r.review and r.review.completeness_score != None %}{{ r.review.completeness_score }}%{% else %}—{% endif %}</td>
+    <td>{% if r.resource_format == 'file' and r.file %}<a href="{{ r.file.url }}">Ochish</a>{% elif r.url %}<a href="{{ r.url }}" target="_blank">Ochish</a>{% elif r.content %}<span class="help">matn</span>{% endif %}</td>
   </tr>{% endfor %}
 </tbody></table>
 {% else %}<div class="empty">Hali resurs yuklanmagan.</div>{% endif %}

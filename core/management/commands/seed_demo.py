@@ -142,6 +142,33 @@ class Command(BaseCommand):
                           "feedback": "Namunaviy AI xulosasi."},
             )
 
+        # har xil turdagi resurslar (havola va matnli sahifa) — mavzuga bog'langan
+        first_ta = assignments[0]
+        topic = first_ta.department_course.course.topics.first()
+        varied = [
+            ("Foydali havola: rasmiy hujjatlar", Resource.Format.URL,
+             {"url": "https://lex.uz", "kind": Resource.Kind.LITERATURE}),
+            ("Video dars: kirish", Resource.Format.VIDEO,
+             {"url": "https://www.youtube.com", "kind": Resource.Kind.VIDEO}),
+            ("Qisqa konspekt (matn)", Resource.Format.PAGE,
+             {"content": "Ushbu mavzu bo‘yicha asosiy tushunchalar, ta‘riflar va misollar.",
+              "kind": Resource.Kind.LECTURE}),
+        ]
+        for title, fmt, extra in varied:
+            res, created = Resource.objects.get_or_create(
+                title=title, uploaded_by=teacher,
+                defaults={"resource_format": fmt, "file": None, **extra},
+            )
+            ResourceLink.objects.get_or_create(
+                resource=res, teacher_assignment=first_ta,
+                defaults={"topic": topic})
+            if created:
+                ResourceReview.objects.get_or_create(
+                    resource=res,
+                    defaults={"ai_model": claude, "status": "completed",
+                              "match_score": 90, "completeness_score": 85,
+                              "feedback": "Namunaviy AI xulosasi."})
+
         # bir nechta talaba
         for i in range(1, 4):
             username = f"talaba{i}"
