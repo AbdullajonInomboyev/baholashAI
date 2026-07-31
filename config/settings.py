@@ -98,10 +98,20 @@ STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {
         "BACKEND": (
-            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            "whitenoise.storage.CompressedStaticFilesStorage"
             if not DEBUG
             else "django.contrib.staticfiles.storage.StaticFilesStorage"
         )
+    },
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "INFO"},
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
     },
 }
 STATICFILES_DIRS = [BASE_DIR / "static"]

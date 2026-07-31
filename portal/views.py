@@ -160,7 +160,7 @@ def year_detail(request, pk):
             semesters.append((sem, placements))
     ctx.update({"active": "years", "year": year, "semesters": semesters,
                 "study_form": study_form, "study_forms": StudyForm.choices,
-                "import_form": ImportForm(),
+                "import_form": ImportForm(faculty=faculty),
                 "imports": year.imports.all()[:6]})
     return render(request, "portal/vice_dean/year_detail.html", ctx)
 
@@ -169,12 +169,13 @@ def year_detail(request, pk):
 def year_import(request, pk):
     faculty, _ = _base(request)
     year = get_object_or_404(AcademicYear, pk=pk, faculty=faculty)
-    form = ImportForm(request.POST, request.FILES)
+    form = ImportForm(request.POST, request.FILES, faculty=faculty)
     if form.is_valid():
         try:
             result = import_curriculum(
                 year, form.cleaned_data["file"],
                 uploaded_by=request.user, forms=form.cleaned_data["forms_to_import"],
+                direction=form.cleaned_data.get("direction"),
             )
             log_action(request.user, "import", "AcademicYear", year.pk,
                        new={"courses": result["courses"], "forms": result["forms"]})

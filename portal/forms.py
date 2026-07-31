@@ -35,12 +35,21 @@ class AcademicYearForm(forms.ModelForm):
 
 class ImportForm(forms.Form):
     file = forms.FileField(label="O‘quv reja fayli (.xlsx)")
+    direction = forms.ModelChoiceField(
+        label="Yo‘nalish", queryset=Direction.objects.none(), required=False,
+        empty_label="Excel’dagi kodni ishlatish (avtomatik)",
+    )
     forms_to_import = forms.MultipleChoiceField(
         label="Ta‘lim shakllari",
         choices=StudyForm.choices,
         widget=forms.CheckboxSelectMultiple,
         initial=[c for c, _ in StudyForm.choices],
     )
+
+    def __init__(self, *args, faculty=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if faculty is not None:
+            self.fields["direction"].queryset = Direction.objects.filter(faculty=faculty)
 
 
 class CourseForm(forms.ModelForm):

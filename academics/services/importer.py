@@ -106,17 +106,18 @@ def parse_workbook(path):
 
 
 @transaction.atomic
-def import_curriculum(academic_year: AcademicYear, path, *, uploaded_by=None, forms=None):
+def import_curriculum(academic_year: AcademicYear, path, *, uploaded_by=None, forms=None, direction=None):
     """Excel'ni bazaga yozadi. `forms` — import qilinadigan ta'lim shakllari
-    (bo‘sh bo‘lsa fayldagi barchasi)."""
+    (bo‘sh bo‘lsa fayldagi barchasi). `direction` berilsa — o‘sha yo‘nalishga
+    yoziladi (fayldagi kod o‘rniga), fanlar aralashmasligi uchun."""
     direction_data, parsed = parse_workbook(path)
-    if not direction_data:
-        raise ValueError("Yo‘nalish kodi topilmadi (S6 katak).")
-
-    direction, _ = Direction.objects.get_or_create(
-        code=direction_data["code"],
-        defaults={"name": direction_data["name"], "faculty": academic_year.faculty},
-    )
+    if direction is None:
+        if not direction_data:
+            raise ValueError("Yo‘nalish kodi topilmadi (S6 katak). Yo‘nalishni qo‘lda tanlang.")
+        direction, _ = Direction.objects.get_or_create(
+            code=direction_data["code"],
+            defaults={"name": direction_data["name"], "faculty": academic_year.faculty},
+        )
 
     selected = forms or list(parsed.keys())
     created_courses = 0

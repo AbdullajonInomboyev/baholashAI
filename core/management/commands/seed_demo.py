@@ -68,6 +68,7 @@ class Command(BaseCommand):
                 assignment_type=at, defaults={"ai_model": models[CONFIG[name]]}
             )
 
+        self._seed_sample_curriculum(faculty, year)
         self._seed_teaching(faculty, department, teacher, year)
 
         self.stdout.write(self.style.SUCCESS("Namunaviy ma'lumot tayyor."))
@@ -155,6 +156,15 @@ class Command(BaseCommand):
                           "group_name": "ATT-25-01"},
             )
 
+        # zam dekandan mudirga namunaviy izoh
+        from core.models import ReviewRemark
+        vice = faculty.dean
+        if vice and department.head:
+            ReviewRemark.objects.get_or_create(
+                author=vice, target=department.head, department=department,
+                defaults={"message": "Amaliy materiallar to‘liq emas — to‘ldirib qo‘ying."},
+            )
+
         self._seed_assignments(assignments)
 
     def _seed_assignments(self, assignments):
@@ -183,3 +193,61 @@ class Command(BaseCommand):
             )
             if created:
                 ai.evaluate_submission(submission)
+        # bittasini o'qituvchi tasdiqlaydi — talaba "Baholarim" bo'sh qolmasin
+        from assessment.models import TeacherReview
+        first = assignment.submissions.first()
+        if first and hasattr(first, "ai_evaluation") and not hasattr(first, "teacher_review"):
+            TeacherReview.objects.get_or_create(
+                submission=first,
+                defaults={"teacher": ta.teacher, "final_score": first.ai_evaluation.score,
+                          "status": TeacherReview.Status.CONFIRMED},
+            )
+            first.status = Submission.Status.TEACHER_REVIEWED
+            first.save(update_fields=["status"])
+
+    def _seed_sample_curriculum(self, faculty, year):
+        """Excel import qilinmagan bo‘lsa — kichik namunaviy o‘quv reja yaratadi,
+        shunda Fanlar/O‘quv yili bo‘limlari bo‘sh qolmaydi."""
+        from academics.models import (
+            Course, CourseSemester, Curriculum, Direction, Semester, StudyForm, SyllabusTopic,
+        )
+
+        if Course.objects.filter(curriculum__direction__faculty=faculty).exists():
+            return  # allaqachon fanlar bor (import qilingan)
+
+        direction, _ = Direction.objects.get_or_create(
+            code="60610100",
+            defaults={"name": "Axborot tizimlari va texnologiyalari", "faculty": faculty},
+        )
+        curriculum, _ = Curriculum.objects.get_or_create(
+            direction=direction, academic_year=year, study_form=StudyForm.FULL_TIME
+        )
+        # (kod, nom, semestr, umumiy soat, tanlovmi)
+        sample = [
+            ("MAT101", "Oliy matematika", 1, 180, False),
+            ("PRG101", "Dasturlash asoslari", 1, 180, False),
+            ("PHY102", "Fizika", 1, 150, False),
+            ("DB201", "Ma'lumotlar bazasi", 2, 150, False),
+            ("WEB201", "Veb-texnologiyalar", 2, 120, False),
+            ("OS202", "Operatsion tizimlar", 2, 120, False),
+            ("NET301", "Kompyuter tarmoqlari", 3, 150, False),
+            ("AI301", "Sun'iy intellekt asoslari", 3, 150, True),
+            ("SE302", "Dasturiy injiniring", 3, 120, False),
+        ]
+        for code, name, sem_no, hours, elective in sample:
+            course, _ = Course.objects.get_or_create(
+                curriculum=curriculum, code=code,
+                defaults={"name": name, "total_hours": hours, "is_elective": elective,
+                          "lecture_hours": hours // 3, "practice_hours": hours // 3,
+                          "independent_hours": hours - 2 * (hours // 3)},
+            )
+            semester, _ = Semester.objects.get_or_create(academic_year=year, number=sem_no)
+            CourseSemester.objects.get_or_create(
+                course=course, semester=semester,
+                defaults={"credits": round(hours / 30, 2), "weekly_hours": 4},
+            )
+            for i in range(1, 4):
+                SyllabusTopic.objects.get_or_create(
+                    course=course, order=i,
+                    defaults={"title": f"{name} — {i}-mavzu"},
+                )
