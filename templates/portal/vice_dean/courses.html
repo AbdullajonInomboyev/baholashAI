@@ -29,6 +29,7 @@
     </td>
   </tr>{% endfor %}
 </tbody></table>
+{% include 'portal/_pager.html' %}
 <div class="help" style="margin-top:8px">Ko‘pi bilan 300 ta ko‘rsatildi. Aniqlashtirish uchun filtrlardan foydalaning.</div>
 {% else %}<div class="empty">Fan topilmadi.</div>{% endif %}
 {% endblock %}

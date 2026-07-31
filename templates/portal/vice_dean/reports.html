@@ -3,7 +3,8 @@
 {% block crumbs %}Hisobotlar{% endblock %}
 {% block content %}
 <div class="page-head"><h1>Hisobotlar</h1><div class="spacer"></div>
-  <a class="btn" href="{% url 'portal:report_faculty' %}">Fakultet hisoboti (Excel)</a></div>
+  <a class="btn" href="{% url 'portal:report_faculty' %}">Fakultet hisoboti (Excel)</a>
+  <a class="btn ghost" href="{% url 'portal:report_faculty_pdf' %}">PDF</a></div>
 
 <div class="panel-card">
   <h2>Kafedra hisobotlari</h2>

@@ -45,6 +45,7 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "core.middleware.CurrentUserMiddleware",
+    "core.middleware.ForcePasswordChangeMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -105,6 +106,16 @@ STORAGES = {
         )
     },
 }
+
+# Doimiy fayl saqlash (ixtiyoriy): USE_S3=True bo'lsa yuklangan fayllar S3'ga saqlanadi.
+if env("USE_S3", "") == "True":
+    STORAGES["default"] = {"BACKEND": "storages.backends.s3.S3Storage"}
+    AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID", "")
+    AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY", "")
+    AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME", "")
+    AWS_S3_REGION_NAME = env("AWS_S3_REGION_NAME", "")
+    AWS_S3_ENDPOINT_URL = env("AWS_S3_ENDPOINT_URL", "") or None
+    AWS_QUERYSTRING_AUTH = False
 
 LOGGING = {
     "version": 1,

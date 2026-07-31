@@ -1,0 +1,8 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="pager">
+  {% if page_obj.has_previous %}<a href="?{{ qstring }}page={{ page_obj.previous_page_number }}">‹ Oldingi</a>{% endif %}
+  <span class="cur">{{ page_obj.number }}</span>
+  <span class="mut">/ {{ page_obj.paginator.num_pages }} ({{ page_obj.paginator.count }} ta)</span>
+  {% if page_obj.has_next %}<a href="?{{ qstring }}page={{ page_obj.next_page_number }}">Keyingi ›</a>{% endif %}
+</div>
+{% endif %}

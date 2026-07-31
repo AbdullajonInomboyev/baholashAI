@@ -75,6 +75,13 @@ So‘ng Admin → **AI modellar** da model ID to‘g‘ri ekanini tekshiring
 turiga bog‘lang (**AI modul sozlamalari**). Talaba **matn javob** yozib topshirsa,
 AI aynan shu matnni baholaydi.
 
+## Doimiy fayl saqlash (S3, ixtiyoriy)
+Bepul serverda yuklangan fayllar deploy'da o'chadi. Doimiy saqlash uchun
+S3-mos xizmat (AWS S3, Cloudflare R2, Backblaze B2) ulang: Render env'ga
+qo'shing — `USE_S3=True`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+`AWS_STORAGE_BUCKET_NAME`, `AWS_S3_REGION_NAME` (R2/B2 uchun `AWS_S3_ENDPOINT_URL`).
+Kalitlar bo'lmasa tizim lokal saqlashda ishlayveradi.
+
 ## Eslatmalar
 - Bepul rejada server 15 daqiqa harakatsizlikdan keyin “uxlaydi”; birinchi soʻrov 30–60 soniya sekin ochiladi.
 - Fayllar (yuklangan resurs/rasm) bepul serverda vaqtincha saqlanadi (deployʼda oʻchishi mumkin). Doimiy saqlash uchun keyinroq S3/Cloudinary ulanadi.

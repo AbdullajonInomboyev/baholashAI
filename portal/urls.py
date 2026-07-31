@@ -49,6 +49,7 @@ urlpatterns = [
 
     path("hisobotlar/", views.report_center, name="reports"),
     path("hisobotlar/fakultet/", views.report_faculty, name="report_faculty"),
+    path("hisobotlar/fakultet/pdf/", views.report_faculty_pdf, name="report_faculty_pdf"),
     path("hisobotlar/kafedra/<int:pk>/", views.report_department, name="report_department"),
     path("hisobotlar/izoh/", views.report_remark, name="report_remark"),
 

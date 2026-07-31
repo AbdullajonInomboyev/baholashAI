@@ -100,3 +100,46 @@ def faculty_report(faculty):
     buffer = BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
+
+
+def faculty_report_pdf(faculty):
+    """Fakultet hisoboti — PDF (reportlab)."""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=20 * mm, bottomMargin=15 * mm)
+    styles = getSampleStyleSheet()
+    elems = [Paragraph(f"Fakultet hisoboti — {faculty.name}", styles["Title"]), Spacer(1, 8)]
+
+    rows = [["Kafedra", "Mudir", "Fanlar", "O'qituvchilar", "O'rtacha sifat %"]]
+    for dept in faculty.departments.all().order_by("name"):
+        course_count = dept.course_links.count()
+        teacher_count = (TeacherAssignment.objects
+                         .filter(department_course__department=dept,
+                                 status=TeacherAssignment.Status.ACTIVE)
+                         .values("teacher").distinct().count())
+        quality = ResourceReview.objects.filter(
+            resource__links__teacher_assignment__department_course__department=dept,
+            status=ResourceReview.Status.COMPLETED,
+        ).aggregate(avg=Avg("match_score"))["avg"]
+        rows.append([dept.name, dept.head.full_name if dept.head else "—",
+                     str(course_count), str(teacher_count),
+                     str(round(quality, 1)) if quality else "—"])
+
+    table = Table(rows, repeatRows=1, hAlign="LEFT")
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#274690")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#c9cede")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f1ea")]),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("TOPPADDING", (0, 0), (-1, -1), 5), ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    elems.append(table)
+    doc.build(elems)
+    return buffer.getvalue()

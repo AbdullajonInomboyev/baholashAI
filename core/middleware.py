@@ -19,3 +19,23 @@ class CurrentUserMiddleware:
             return self.get_response(request)
         finally:
             _state.user = None
+
+
+class ForcePasswordChangeMiddleware:
+    """Vaqtinchalik parolli foydalanuvchini majburan parol o'zgartirishga yo'naltiradi."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        must_change = getattr(user, "must_change_password", False)
+        if callable(must_change):
+            must_change = must_change()
+        if user is not None and user.is_authenticated and must_change:
+            path = request.path
+            allowed = ("/hisob/parol-almashtirish/", "/hisob/chiqish/")
+            if not path.startswith("/admin/") and not path.startswith(allowed) and not path.startswith("/static/"):
+                from django.shortcuts import redirect
+                return redirect("accounts:force_password_change")
+        return self.get_response(request)

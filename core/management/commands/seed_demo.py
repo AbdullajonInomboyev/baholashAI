@@ -34,19 +34,19 @@ class Command(BaseCommand):
         department, _ = Department.objects.get_or_create(faculty=faculty, name="Axborot tizimlari kafedrasi")
         year, _ = AcademicYear.objects.get_or_create(faculty=faculty, title="2025-2026")
 
-        vice = self._user("zamdekan", "Alisher Karimov")
+        vice = self._user("zamdekan", "Alisher Karimov", active_password=True)
         UserRole.objects.get_or_create(user=vice, role=Role.VICE_DEAN, faculty=faculty)
         faculty.dean = vice
         faculty.save(update_fields=["dean"])
 
-        head = self._user("mudir", "Dilnoza Rahimova")
+        head = self._user("mudir", "Dilnoza Rahimova", active_password=True)
         UserRole.objects.get_or_create(user=head, role=Role.DEPT_HEAD, department=department)
         department.head = head
         department.save(update_fields=["head"])
         # ko‘p rol: kafedra mudiri ayni vaqtda o‘qituvchi ham
         UserRole.objects.get_or_create(user=head, role=Role.TEACHER, department=department)
 
-        teacher = self._user("oqituvchi", "Jamshid Qarabayev")
+        teacher = self._user("oqituvchi", "Jamshid Qarabayev", active_password=True)
         UserRole.objects.get_or_create(user=teacher, role=Role.TEACHER, department=department)
 
         student = self._user("talaba", "Sardor To‘xtayev", active_password=True)
@@ -177,6 +177,7 @@ class Command(BaseCommand):
             )
             if created:
                 student.set_password("parol123")
+                student.password_status = PasswordStatus.ACTIVE
                 student.save()
             UserRole.objects.get_or_create(user=student, role=Role.STUDENT)
             StudentEnrollment.objects.get_or_create(

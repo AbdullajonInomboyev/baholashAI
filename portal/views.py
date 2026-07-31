@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import HttpResponse
+from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -23,6 +24,14 @@ from .forms import (
 from .services import reports, students
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def _paginate(request, qs, per_page=25):
+    page = Paginator(qs, per_page).get_page(request.GET.get("page"))
+    params = request.GET.copy()
+    params.pop("page", None)
+    qstr = params.urlencode()
+    return page, (qstr + "&" if qstr else "")
 
 
 def _base(request):
@@ -206,7 +215,8 @@ def courses(request):
         qs = qs.filter(curriculum__study_form=study_form)
     if query:
         qs = qs.filter(Q(code__icontains=query) | Q(name__icontains=query))
-    ctx.update({"active": "courses", "courses": qs[:300],
+    page, qstring = _paginate(request, qs, 30)
+    ctx.update({"active": "courses", "courses": page, "page_obj": page, "qstring": qstring,
                 "directions": Direction.objects.filter(faculty=faculty),
                 "study_forms": StudyForm.choices,
                 "f_direction": direction_id, "f_form": study_form, "q": query})
@@ -256,8 +266,9 @@ def student_list(request):
                    .select_related("student", "direction", "academic_year"))
     if year_id:
         enrollments = enrollments.filter(academic_year_id=year_id)
+    page, qstring = _paginate(request, enrollments.order_by("group_name", "student__full_name"), 30)
     ctx.update({"active": "students", "years": years, "year_id": int(year_id) if year_id else None,
-                "enrollments": enrollments.order_by("group_name", "student__full_name"),
+                "enrollments": page, "page_obj": page, "qstring": qstring,
                 "import_form": StudentImportForm()})
     return render(request, "portal/vice_dean/students.html", ctx)
 
@@ -314,6 +325,17 @@ def report_faculty(request):
     ReportExport.objects.create(generated_by=request.user, scope=ReportExport.Scope.FACULTY,
                                 faculty=faculty)
     return _xlsx_response(data, f"fakultet_hisobot_{faculty.pk}.xlsx")
+
+
+@role_required(Role.VICE_DEAN)
+def report_faculty_pdf(request):
+    faculty, _ = _base(request)
+    data = reports.faculty_report_pdf(faculty)
+    ReportExport.objects.create(generated_by=request.user, scope=ReportExport.Scope.FACULTY,
+                                faculty=faculty)
+    resp = HttpResponse(data, content_type="application/pdf")
+    resp["Content-Disposition"] = f'attachment; filename="fakultet_hisobot_{faculty.pk}.pdf"'
+    return resp
 
 
 @role_required(Role.VICE_DEAN)
