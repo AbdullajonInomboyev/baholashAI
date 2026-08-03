@@ -1,0 +1,19 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}{% if instance %}Guruhni tahrirlash{% else %}Yangi guruh{% endif %}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{% if instance %}Guruhni tahrirlash{% else %}Yangi guruh{% endif %}</h1></div>
+<div class="panel-card" style="max-width:560px">
+  <form class="stack" method="post">{% csrf_token %}
+    <label>{{ form.direction.label }}</label>{{ form.direction }}
+    <div class="row"><div><label>{{ form.name.label }}</label>{{ form.name }}</div>
+      <div><label>{{ form.course.label }}</label>{{ form.course }}</div></div>
+    <div class="row"><div><label>{{ form.study_form.label }}</label>{{ form.study_form }}</div>
+      <div><label>{{ form.academic_year.label }}</label>{{ form.academic_year }}</div></div>
+    <label>{{ form.curator.label }}</label>{{ form.curator }}
+    <label style="margin-top:8px">{{ form.is_active }} {{ form.is_active.label }}</label>
+    <div style="margin-top:14px"><button class="btn" type="submit">Saqlash</button>
+      <a class="btn ghost" href="{% url 'portal:groups' %}">Bekor</a></div>
+  </form>
+</div>
+{% endblock %}

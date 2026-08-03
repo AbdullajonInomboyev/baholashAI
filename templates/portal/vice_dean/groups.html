@@ -1,0 +1,26 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Akademik guruhlar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Akademik guruhlar</h1><div class="spacer"></div>
+  <a class="btn" href="{% url 'portal:group_create' %}">Yangi guruh</a></div>
+<div class="filters">
+  <a class="chip {% if not f_course %}active{% endif %}" href="?">Barcha kurslar</a>
+  {% for c in courses %}<a class="chip {% if f_course == c|stringformat:'s' %}active{% endif %}" href="?course={{ c }}">{{ c }}-kurs</a>{% endfor %}
+</div>
+{% if groups %}
+<table class="grid"><thead><tr><th>Guruh</th><th>Yo‘nalish</th><th>Kurs</th><th>Ta‘lim shakli</th><th>Kurator</th><th>Talabalar</th><th></th></tr></thead><tbody>
+  {% for g in groups %}<tr>
+    <td><a href="{% url 'portal:group_detail' g.pk %}"><b>{{ g.name }}</b></a> {% if not g.is_active %}<span class="tag mut">nofaol</span>{% endif %}</td>
+    <td>{{ g.direction.code }}</td>
+    <td>{{ g.course }}-kurs</td>
+    <td>{{ g.get_study_form_display }}</td>
+    <td>{% if g.curator %}{{ g.curator.full_name|default:g.curator.username }}{% else %}<span class="help">—</span>{% endif %}</td>
+    <td>{{ g.student_count }}</td>
+    <td class="actions"><a class="btn ghost sm" href="{% url 'portal:group_detail' g.pk %}">Talabalar</a>
+      <a class="btn ghost sm" href="{% url 'portal:group_edit' g.pk %}">Tahrirlash</a>
+      <form class="inline-form" method="post" action="{% url 'portal:group_delete' g.pk %}" onsubmit="return confirm('Guruh o‘chirilsinmi?')">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Guruh yo‘q. «Yangi guruh» tugmasi orqali qo‘shing.</div>{% endif %}
+{% endblock %}

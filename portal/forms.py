@@ -1,8 +1,10 @@
 from django import forms
 
 from academics.models import (
-    AcademicYear, Course, Curriculum, Department, Direction, StudyForm,
+    AcademicGroup, AcademicYear, Course, Curriculum, Department, Direction, StudyForm,
 )
+from accounts.models import Role
+from django.contrib.auth import get_user_model
 from teaching.models import DepartmentCourse
 
 
@@ -195,3 +197,24 @@ class SubmissionForm(forms.Form):
         if not cleaned.get("text_answer") and not cleaned.get("file"):
             raise forms.ValidationError("Matn javob yozing yoki fayl yuklang.")
         return cleaned
+
+
+class AcademicGroupForm(forms.ModelForm):
+    class Meta:
+        model = AcademicGroup
+        fields = ["direction", "academic_year", "name", "study_form", "course", "curator", "is_active"]
+        labels = {"direction": "Yo‘nalish", "academic_year": "Qabul yili", "name": "Guruh nomi",
+                  "study_form": "Ta‘lim shakli", "course": "Kurs", "curator": "Kurator",
+                  "is_active": "Faol"}
+        widgets = {"name": forms.TextInput(attrs={"placeholder": "Masalan: AT-24"})}
+
+    def __init__(self, *args, faculty=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["academic_year"].required = False
+        self.fields["curator"].required = False
+        if faculty is not None:
+            self.fields["direction"].queryset = Direction.objects.filter(faculty=faculty)
+            self.fields["academic_year"].queryset = AcademicYear.objects.filter(faculty=faculty)
+            self.fields["curator"].queryset = (
+                get_user_model().objects.filter(roles__role=Role.TEACHER).distinct()
+            )

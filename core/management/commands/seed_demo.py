@@ -186,6 +186,17 @@ class Command(BaseCommand):
                           "group_name": "ATT-25-01"},
             )
 
+        # namunaviy akademik guruh + talabalarni biriktirish
+        from academics.models import AcademicGroup
+        group, _ = AcademicGroup.objects.get_or_create(
+            direction=direction, name="ATT-25-01",
+            defaults={"academic_year": year, "study_form": StudyForm.FULL_TIME,
+                      "course": 1, "curator": teacher, "is_active": True},
+        )
+        for enr in StudentEnrollment.objects.filter(direction=direction, group__isnull=True):
+            enr.group = group
+            enr.save(update_fields=["group"])
+
         # zam dekandan mudirga namunaviy izoh
         from core.models import ReviewRemark
         vice = faculty.dean

@@ -16,6 +16,13 @@ urlpatterns = [
     path("kafedralar/<int:pk>/ochirish/", views.department_delete, name="department_delete"),
 
     path("yonalishlar/", views.directions, name="directions"),
+    path("guruhlar/", views.groups, name="groups"),
+    path("guruhlar/yangi/", views.group_form, name="group_create"),
+    path("guruhlar/<int:pk>/", views.group_detail, name="group_detail"),
+    path("guruhlar/<int:pk>/tahrir/", views.group_form, name="group_edit"),
+    path("guruhlar/<int:pk>/ochirish/", views.group_delete, name="group_delete"),
+    path("guruhlar/<int:pk>/talaba-qoshish/", views.group_add_student, name="group_add_student"),
+    path("guruhlar/<int:pk>/talaba/<int:enr_pk>/chiqarish/", views.group_remove_student, name="group_remove_student"),
     path("yonalishlar/yangi/", views.direction_form, name="direction_create"),
     path("yonalishlar/<int:pk>/", views.direction_form, name="direction_edit"),
 

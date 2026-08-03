@@ -273,6 +273,10 @@ class StudentEnrollment(models.Model):
     )
     study_form = models.CharField("Ta‘lim shakli", max_length=20, choices=StudyForm.choices)
     group_name = models.CharField("Guruh", max_length=50)
+    group = models.ForeignKey(
+        "academics.AcademicGroup", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="members", verbose_name="Akademik guruh"
+    )
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -287,3 +291,44 @@ class StudentEnrollment(models.Model):
 
     def __str__(self):
         return f"{self.student} · {self.group_name}"
+
+
+class AcademicGroup(models.Model):
+    direction = models.ForeignKey(
+        Direction, on_delete=models.CASCADE, related_name="academic_groups",
+        verbose_name="Yo‘nalish"
+    )
+    academic_year = models.ForeignKey(
+        AcademicYear, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="academic_groups", verbose_name="Qabul yili"
+    )
+    name = models.CharField("Guruh nomi", max_length=50)
+    study_form = models.CharField(
+        "Ta‘lim shakli", max_length=20, choices=StudyForm.choices, default=StudyForm.FULL_TIME
+    )
+    course = models.PositiveSmallIntegerField("Kurs", default=1)
+    curator = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="curated_groups", verbose_name="Kurator"
+    )
+    is_active = models.BooleanField("Faol", default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Akademik guruh"
+        verbose_name_plural = "Akademik guruhlar"
+        ordering = ["course", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["direction", "name"], name="uniq_group_per_direction")
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def faculty(self):
+        return self.direction.faculty
+
+    @property
+    def student_count(self):
+        return self.members.filter(status=StudentEnrollment.Status.ACTIVE).count()

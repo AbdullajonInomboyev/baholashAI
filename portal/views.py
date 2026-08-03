@@ -7,8 +7,7 @@ from django.utils import timezone
 
 from academics.models import (
     AcademicYear, Course, CourseSemester, Curriculum, Department, Direction,
-    Semester, StudentEnrollment, StudyForm, SyllabusTopic,
-)
+    Semester, StudentEnrollment, StudyForm, SyllabusTopic, AcademicGroup,)
 from academics.services.importer import import_curriculum
 from accounts.models import PasswordStatus, Role, UserRole
 from core.audit import log_action
@@ -18,7 +17,7 @@ from teaching.models import DepartmentCourse
 from .access import role_required, vice_dean_faculty
 from .forms import (
     AcademicYearForm, AssignCourseForm, CourseForm, CoursePlacementForm,
-    DepartmentForm, DirectionForm, ImportForm, ReportRemarkForm,
+    AcademicGroupForm, DepartmentForm, DirectionForm, ImportForm, ReportRemarkForm,
     StudentImportForm, StudentProfileForm, SyllabusTopicForm,
 )
 from .services import reports, students
@@ -639,3 +638,78 @@ def course_explorer(request):
                 "sel_sem": sel_sem, "sel_course": sel_course, "detail": detail,
                 "course_list": course_list, "heading": heading})
     return render(request, "portal/vice_dean/course_explorer.html", ctx)
+
+
+# ==================== Akademik guruhlar ====================
+
+@role_required(Role.VICE_DEAN)
+def groups(request):
+    faculty, ctx = _base(request)
+    qs = (AcademicGroup.objects.filter(direction__faculty=faculty)
+          .select_related("direction", "curator", "academic_year"))
+    f_course = request.GET.get("course")
+    if f_course:
+        qs = qs.filter(course=f_course)
+    ctx.update({"active": "groups", "groups": qs, "f_course": f_course,
+                "courses": [1, 2, 3, 4, 5, 6]})
+    return render(request, "portal/vice_dean/groups.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def group_form(request, pk=None):
+    faculty, ctx = _base(request)
+    instance = get_object_or_404(AcademicGroup, pk=pk, direction__faculty=faculty) if pk else None
+    form = AcademicGroupForm(request.POST or None, instance=instance, faculty=faculty)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Guruh saqlandi.")
+        return redirect("portal:groups")
+    ctx.update({"active": "groups", "form": form, "instance": instance})
+    return render(request, "portal/vice_dean/group_form.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def group_delete(request, pk):
+    faculty, _ = _base(request)
+    group = get_object_or_404(AcademicGroup, pk=pk, direction__faculty=faculty)
+    group.delete()
+    messages.success(request, "Guruh o‘chirildi.")
+    return redirect("portal:groups")
+
+
+@role_required(Role.VICE_DEAN)
+def group_detail(request, pk):
+    faculty, ctx = _base(request)
+    group = get_object_or_404(
+        AcademicGroup.objects.select_related("direction", "curator"),
+        pk=pk, direction__faculty=faculty)
+    members = group.members.select_related("student", "academic_year").order_by("student__full_name")
+    available = (StudentEnrollment.objects
+                 .filter(direction=group.direction, study_form=group.study_form, group__isnull=True)
+                 .select_related("student")[:100])
+    ctx.update({"active": "groups", "group": group, "members": members, "available": available})
+    return render(request, "portal/vice_dean/group_detail.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def group_add_student(request, pk):
+    faculty, _ = _base(request)
+    group = get_object_or_404(AcademicGroup, pk=pk, direction__faculty=faculty)
+    enr = get_object_or_404(StudentEnrollment, pk=request.POST.get("enrollment"),
+                            direction=group.direction)
+    enr.group = group
+    enr.group_name = group.name
+    enr.save(update_fields=["group", "group_name"])
+    messages.success(request, "Talaba guruhga qo‘shildi.")
+    return redirect("portal:group_detail", pk=pk)
+
+
+@role_required(Role.VICE_DEAN)
+def group_remove_student(request, pk, enr_pk):
+    faculty, _ = _base(request)
+    group = get_object_or_404(AcademicGroup, pk=pk, direction__faculty=faculty)
+    enr = get_object_or_404(StudentEnrollment, pk=enr_pk, group=group)
+    enr.group = None
+    enr.save(update_fields=["group"])
+    messages.success(request, "Talaba guruhdan chiqarildi.")
+    return redirect("portal:group_detail", pk=pk)

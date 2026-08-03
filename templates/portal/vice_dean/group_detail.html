@@ -1,0 +1,39 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ group.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ group.name }}</h1><div class="spacer"></div>
+  <a class="btn ghost sm" href="{% url 'portal:group_edit' group.pk %}">Tahrirlash</a></div>
+<div class="help" style="margin-bottom:14px">
+  {{ group.direction.code }} · {{ group.course }}-kurs · {{ group.get_study_form_display }}
+  · Kurator: {% if group.curator %}<b>{{ group.curator.full_name|default:group.curator.username }}</b>{% else %}—{% endif %}
+  · Talabalar: {{ group.student_count }}
+</div>
+
+<div class="panel-card">
+  <h2>Guruh talabalari</h2>
+  {% if members %}
+  <table class="grid"><thead><tr><th>F.I.Sh.</th><th>Holati</th><th></th></tr></thead><tbody>
+    {% for m in members %}<tr>
+      <td>{{ m.student.full_name|default:m.student.username }}</td>
+      <td>{{ m.get_status_display }}</td>
+      <td><form class="inline-form" method="post" action="{% url 'portal:group_remove_student' group.pk m.pk %}">{% csrf_token %}<button class="btn ghost sm" type="submit">Chiqarish</button></form></td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="empty">Guruhda talaba yo‘q. Quyidan qo‘shing.</div>{% endif %}
+</div>
+
+<div class="panel-card">
+  <h2>Guruhga talaba qo‘shish</h2>
+  <div class="help" style="margin-bottom:8px">Shu yo‘nalish ({{ group.direction.code }}) va ta‘lim shakli bo‘yicha guruhsiz talabalar:</div>
+  {% if available %}
+  <form method="post" action="{% url 'portal:group_add_student' group.pk %}" style="display:flex;gap:10px;align-items:center">{% csrf_token %}
+    <select name="enrollment" style="flex:1;max-width:360px;padding:9px;border:1px solid var(--line);border-radius:8px">
+      {% for e in available %}<option value="{{ e.pk }}">{{ e.student.full_name|default:e.student.username }}</option>{% endfor %}
+    </select>
+    <button class="btn" type="submit">Qo‘shish</button>
+  </form>
+  {% else %}<div class="help">Qo‘shish uchun guruhsiz talaba topilmadi.</div>{% endif %}
+</div>
+<a class="btn ghost" href="{% url 'portal:groups' %}">← Guruhlar</a>
+{% endblock %}

@@ -2,8 +2,7 @@ from django.contrib import admin
 
 from .models import (
     AcademicYear, Course, CourseSemester, Curriculum, Department, Direction,
-    ExcelImport, Faculty, Semester, StudentEnrollment, SyllabusTopic,
-)
+    ExcelImport, Faculty, Semester, StudentEnrollment, SyllabusTopic, AcademicGroup,)
 
 
 @admin.register(Faculty)
@@ -61,3 +60,10 @@ class ExcelImportAdmin(admin.ModelAdmin):
 admin.site.register(Semester)
 admin.site.register(SyllabusTopic)
 admin.site.register(StudentEnrollment)
+
+
+@admin.register(AcademicGroup)
+class AcademicGroupAdmin(admin.ModelAdmin):
+    list_display = ("name", "direction", "course", "study_form", "curator", "is_active")
+    list_filter = ("course", "study_form", "is_active")
+    search_fields = ("name",)
