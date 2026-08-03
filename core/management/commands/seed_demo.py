@@ -223,6 +223,7 @@ class Command(BaseCommand):
         self._seed_quiz(assignments)
         self._seed_notifications()
         self._seed_rooms()
+        self._seed_program()
 
     def _seed_assignments(self, assignments):
         """Namunaviy topshiriq + topshirilgan ishlar (o'qituvchi baholashi uchun)."""
@@ -392,3 +393,19 @@ class Command(BaseCommand):
         for b, name, kind, cap, floor in rooms:
             Room.objects.get_or_create(building=b, name=name,
                 defaults={"kind": kind, "capacity": cap, "floor": floor})
+
+
+    def _seed_program(self):
+        from academics.models import Course, CourseLiterature, ControlType, Curriculum
+        course = Course.objects.first()
+        if course and not course.literature.exists():
+            CourseLiterature.objects.create(course=course, title="Asosiy darslik", author="Karimov A.", year="2023", kind=CourseLiterature.Kind.MAIN, order=1)
+            CourseLiterature.objects.create(course=course, title="Qo‘shimcha qo‘llanma", author="Rahimova D.", year="2022", kind=CourseLiterature.Kind.ADDITIONAL, order=2)
+        if course and not course.control_types.exists():
+            ControlType.objects.create(course=course, name="Oraliq nazorat", weight=30, order=1)
+            ControlType.objects.create(course=course, name="Joriy nazorat", weight=30, order=2)
+            ControlType.objects.create(course=course, name="Yakuniy nazorat", weight=40, order=3)
+        cur = Curriculum.objects.first()
+        if cur and not cur.is_approved:
+            from django.utils import timezone as tz
+            cur.is_approved = True; cur.approved_at = tz.now(); cur.save()

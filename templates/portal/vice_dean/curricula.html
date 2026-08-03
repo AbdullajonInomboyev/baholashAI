@@ -1,0 +1,26 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}O‘quv rejalari{% endblock %}
+{% block content %}
+<div class="page-head"><h1>O‘quv rejalari</h1></div>
+<div class="help" style="margin-bottom:14px">Har bir reja — yo‘nalish × o‘quv yili × ta‘lim shakli. Rejani tasdiqlash yoki boshqa yilga nusxalash mumkin.</div>
+{% if curricula %}
+<table class="grid"><thead><tr><th>Yo‘nalish</th><th>O‘quv yili</th><th>Ta‘lim shakli</th><th>Fanlar</th><th>Holat</th><th>Amal</th></tr></thead><tbody>
+  {% for c in curricula %}<tr>
+    <td><b>{{ c.direction.code }}</b> — {{ c.direction.name }}</td>
+    <td>{{ c.academic_year.title }}</td>
+    <td>{{ c.get_study_form_display }}</td>
+    <td>{{ c.n_courses }}</td>
+    <td>{% if c.is_approved %}<span class="tag ok">Tasdiqlangan</span>{% else %}<span class="tag warn">Loyiha</span>{% endif %}</td>
+    <td class="actions">
+      {% if not c.is_approved %}<form class="inline-form" method="post" action="{% url 'portal:curriculum_approve' c.pk %}">{% csrf_token %}<button class="btn sm" type="submit">Tasdiqlash</button></form>{% endif %}
+      <form class="inline-form" method="post" action="{% url 'portal:curriculum_copy' c.pk %}">{% csrf_token %}
+        <select name="target_year" style="padding:5px;border:1px solid var(--line);border-radius:6px;font-size:12px">
+          {% for y in years %}<option value="{{ y.pk }}">{{ y.title }}</option>{% endfor %}
+        </select>
+        <button class="btn ghost sm" type="submit">Nusxalash</button></form>
+    </td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">O‘quv reja yo‘q. «O‘quv yili va import» dan boshlang.</div>{% endif %}
+{% endblock %}

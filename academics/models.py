@@ -151,6 +151,8 @@ class Curriculum(models.Model):
         AcademicYear, on_delete=models.CASCADE, related_name="curricula", verbose_name="O‘quv yili"
     )
     study_form = models.CharField("Ta‘lim shakli", max_length=20, choices=StudyForm.choices)
+    is_approved = models.BooleanField("Tasdiqlangan", default=False)
+    approved_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -332,3 +334,42 @@ class AcademicGroup(models.Model):
     @property
     def student_count(self):
         return self.members.filter(status=StudentEnrollment.Status.ACTIVE).count()
+
+
+class CourseLiterature(models.Model):
+    class Kind(models.TextChoices):
+        MAIN = "main", "Asosiy"
+        ADDITIONAL = "additional", "Qo‘shimcha"
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="literature",
+                               verbose_name="Fan")
+    title = models.CharField("Nomi", max_length=300)
+    author = models.CharField("Muallif", max_length=200, blank=True)
+    year = models.CharField("Yil", max_length=9, blank=True)
+    kind = models.CharField("Turi", max_length=12, choices=Kind.choices, default=Kind.MAIN)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Adabiyot"
+        verbose_name_plural = "Adabiyotlar"
+        ordering = ["kind", "order", "id"]
+
+    def __str__(self):
+        return self.title
+
+
+class ControlType(models.Model):
+    """Nazorat turi + baholash mezoni (vazn %)."""
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="control_types",
+                               verbose_name="Fan")
+    name = models.CharField("Nazorat turi", max_length=120)
+    weight = models.PositiveIntegerField("Vazn (%)", default=0)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Nazorat turi"
+        verbose_name_plural = "Nazorat turlari"
+        ordering = ["order", "id"]
+
+    def __str__(self):
+        return f"{self.name} ({self.weight}%)"

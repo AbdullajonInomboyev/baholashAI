@@ -91,5 +91,57 @@
   </form>
 </div>
 
+<div class="panel-card">
+  <h2>Adabiyotlar</h2>
+  {% if literature %}
+  <table class="grid"><thead><tr><th>Turi</th><th>Nomi</th><th>Muallif</th><th>Yil</th><th></th></tr></thead><tbody>
+    {% for l in literature %}<tr>
+      <td><span class="tag mut">{{ l.get_kind_display }}</span></td><td>{{ l.title }}</td>
+      <td>{{ l.author|default:"—" }}</td><td>{{ l.year|default:"—" }}</td>
+      <td><form class="inline-form" method="post" action="{% url 'portal:literature_delete' l.pk %}">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Adabiyot kiritilmagan.</div>{% endif %}
+  <form class="stack" method="post" action="{% url 'portal:literature_add' course.pk %}" style="margin-top:14px">{% csrf_token %}
+    <div class="row"><div><label>Nomi</label><input type="text" name="title" required></div>
+      <div style="max-width:180px"><label>Muallif</label><input type="text" name="author"></div>
+      <div style="max-width:90px"><label>Yil</label><input type="text" name="year"></div>
+      <div style="max-width:140px"><label>Turi</label><select name="kind"><option value="main">Asosiy</option><option value="additional">Qo‘shimcha</option></select></div></div>
+    <div style="margin-top:10px"><button class="btn sm" type="submit">Adabiyot qo‘shish</button></div>
+  </form>
+</div>
+
+<div class="panel-card">
+  <h2>Nazorat turlari va baholash mezoni</h2>
+  {% if control_types %}
+  <table class="grid"><thead><tr><th>Nazorat turi</th><th>Vazn (%)</th><th></th></tr></thead><tbody>
+    {% for c in control_types %}<tr>
+      <td>{{ c.name }}</td><td>{{ c.weight }}%</td>
+      <td><form class="inline-form" method="post" action="{% url 'portal:control_delete' c.pk %}">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td>
+    </tr>{% endfor %}
+    <tr><td><b>Jami</b></td><td><b class="{% if control_total != 100 %}tag bad{% else %}tag ok{% endif %}">{{ control_total }}%</b></td><td></td></tr>
+  </tbody></table>
+  {% if control_total != 100 %}<div class="help">Eslatma: vaznlar yig‘indisi 100% bo‘lishi tavsiya etiladi.</div>{% endif %}
+  {% else %}<div class="help">Nazorat turi kiritilmagan.</div>{% endif %}
+  <form class="stack" method="post" action="{% url 'portal:control_add' course.pk %}" style="margin-top:14px">{% csrf_token %}
+    <div class="row"><div><label>Nazorat turi</label><input type="text" name="name" placeholder="Masalan: Oraliq nazorat" required></div>
+      <div style="max-width:140px"><label>Vazn (%)</label><input type="number" name="weight" min="0" max="100" value="0"></div></div>
+    <div style="margin-top:10px"><button class="btn sm" type="submit">Qo‘shish</button></div>
+  </form>
+</div>
+
+<div class="panel-card">
+  <h2>Fayllar va resurslar</h2>
+  {% if resource_links %}
+  <table class="grid"><thead><tr><th>Material</th><th>Ko‘rinishi</th><th>Mavzu</th><th>Tasdiq</th></tr></thead><tbody>
+    {% for l in resource_links %}<tr>
+      <td>{{ l.resource.title }}</td><td><span class="tag mut">{{ l.resource.get_resource_format_display }}</span></td>
+      <td>{% if l.topic %}{{ l.topic.title }}{% else %}—{% endif %}</td>
+      <td>{% if l.resource.approval_status == 'approved' %}<span class="tag ok">Tasdiqlangan</span>{% elif l.resource.approval_status == 'rejected' %}<span class="tag bad">Rad etilgan</span>{% else %}<span class="tag warn">Kutilmoqda</span>{% endif %}</td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Bu fanga resurs biriktirilmagan (o‘qituvchilar «Resurslar» bo‘limidan qo‘shadi).</div>{% endif %}
+</div>
+
 <a class="btn ghost" href="{% url 'portal:courses' %}">← Fanlar ro‘yxati</a>
 {% endblock %}

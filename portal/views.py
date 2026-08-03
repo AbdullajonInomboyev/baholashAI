@@ -434,11 +434,22 @@ def course_detail(request, pk):
         "active": "courses", "course": course, "placements": placements,
         "dept_links": dept_links, "teachers": teachers,
         "topics": course.topics.all(),
+        "literature": course.literature.all(),
+        "control_types": course.control_types.all(),
+        "control_total": sum(c.weight for c in course.control_types.all()),
+        "resource_links": _course_resource_links(course),
         "placement_form": CoursePlacementForm(),
         "topic_form": SyllabusTopicForm(),
         "assign_form": AssignCourseForm(faculty=faculty),
     })
     return render(request, "portal/vice_dean/course_detail.html", ctx)
+
+
+def _course_resource_links(course):
+    from teaching.models import ResourceLink
+    return (ResourceLink.objects
+            .filter(teacher_assignment__department_course__course=course)
+            .select_related("resource", "topic").distinct())
 
 
 @role_required(Role.VICE_DEAN)
@@ -946,3 +957,123 @@ def resource_reject(request, pk):
     _review_resource_action(request, pk, Resource.ApprovalStatus.REJECTED)
     messages.success(request, "Resurs rad etildi.")
     return redirect(request.META.get("HTTP_REFERER", "portal:eresources"))
+
+
+# ==================== Fan dasturi: adabiyotlar / nazorat turlari ====================
+
+def _get_course(request, pk):
+    faculty, _ = _base(request)
+    return get_object_or_404(Course, pk=pk, curriculum__direction__faculty=faculty)
+
+
+@role_required(Role.VICE_DEAN)
+def literature_add(request, pk):
+    from academics.models import CourseLiterature
+    course = _get_course(request, pk)
+    title = (request.POST.get("title") or "").strip()
+    if title:
+        CourseLiterature.objects.create(
+            course=course, title=title, author=request.POST.get("author", "").strip(),
+            year=request.POST.get("year", "").strip(),
+            kind=request.POST.get("kind", CourseLiterature.Kind.MAIN),
+            order=course.literature.count() + 1)
+        messages.success(request, "Adabiyot qo‘shildi.")
+    return redirect("portal:course_detail", pk=pk)
+
+
+@role_required(Role.VICE_DEAN)
+def literature_delete(request, pk):
+    from academics.models import CourseLiterature
+    lit = get_object_or_404(CourseLiterature, pk=pk,
+                            course__curriculum__direction__faculty=_base(request)[0])
+    cpk = lit.course_id
+    lit.delete()
+    messages.success(request, "Adabiyot o‘chirildi.")
+    return redirect("portal:course_detail", pk=cpk)
+
+
+@role_required(Role.VICE_DEAN)
+def control_add(request, pk):
+    from academics.models import ControlType
+    course = _get_course(request, pk)
+    name = (request.POST.get("name") or "").strip()
+    try:
+        weight = int(request.POST.get("weight") or 0)
+    except ValueError:
+        weight = 0
+    if name:
+        ControlType.objects.create(course=course, name=name, weight=weight,
+                                   order=course.control_types.count() + 1)
+        messages.success(request, "Nazorat turi qo‘shildi.")
+    return redirect("portal:course_detail", pk=pk)
+
+
+@role_required(Role.VICE_DEAN)
+def control_delete(request, pk):
+    from academics.models import ControlType
+    ct = get_object_or_404(ControlType, pk=pk,
+                           course__curriculum__direction__faculty=_base(request)[0])
+    cpk = ct.course_id
+    ct.delete()
+    messages.success(request, "Nazorat turi o‘chirildi.")
+    return redirect("portal:course_detail", pk=cpk)
+
+
+# ==================== O'quv rejalari (tasdiqlash / nusxa) ====================
+
+@role_required(Role.VICE_DEAN)
+def curricula_list(request):
+    faculty, ctx = _base(request)
+    curricula = (Curriculum.objects.filter(direction__faculty=faculty)
+                 .select_related("direction", "academic_year")
+                 .annotate(n_courses=Count("courses", distinct=True))
+                 .order_by("-academic_year__title", "direction__code"))
+    years = AcademicYear.objects.filter(faculty=faculty)
+    ctx.update({"active": "curricula", "curricula": curricula, "years": years})
+    return render(request, "portal/vice_dean/curricula.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def curriculum_approve(request, pk):
+    from django.utils import timezone as tz
+    faculty, _ = _base(request)
+    cur = get_object_or_404(Curriculum, pk=pk, direction__faculty=faculty)
+    cur.is_approved = True
+    cur.approved_at = tz.now()
+    cur.save(update_fields=["is_approved", "approved_at"])
+    messages.success(request, "O‘quv reja tasdiqlandi.")
+    return redirect("portal:curricula")
+
+
+@role_required(Role.VICE_DEAN)
+def curriculum_copy(request, pk):
+    from academics.models import Course, CourseSemester, Semester, SyllabusTopic, CourseLiterature, ControlType
+    faculty, _ = _base(request)
+    src = get_object_or_404(Curriculum, pk=pk, direction__faculty=faculty)
+    target_year = get_object_or_404(AcademicYear, pk=request.POST.get("target_year"),
+                                    faculty=faculty)
+    dst, created = Curriculum.objects.get_or_create(
+        direction=src.direction, academic_year=target_year, study_form=src.study_form)
+    if not created and dst.courses.exists():
+        messages.error(request, "Bu yil uchun reja allaqachon mavjud (fanlar bilan).")
+        return redirect("portal:curricula")
+    for c in src.courses.all():
+        new_c = Course.objects.create(
+            curriculum=dst, code=c.code, name=c.name, total_hours=c.total_hours,
+            lecture_hours=c.lecture_hours, practice_hours=c.practice_hours,
+            independent_hours=c.independent_hours, is_elective=c.is_elective)
+        for pl in c.placements.select_related("semester"):
+            sem, _ = Semester.objects.get_or_create(academic_year=target_year,
+                                                    number=pl.semester.number)
+            CourseSemester.objects.get_or_create(
+                course=new_c, semester=sem,
+                defaults={"credits": pl.credits, "weekly_hours": pl.weekly_hours})
+        for t in c.topics.all():
+            SyllabusTopic.objects.create(course=new_c, order=t.order, title=t.title)
+        for lit in c.literature.all():
+            CourseLiterature.objects.create(course=new_c, title=lit.title, author=lit.author,
+                                            year=lit.year, kind=lit.kind, order=lit.order)
+        for ct in c.control_types.all():
+            ControlType.objects.create(course=new_c, name=ct.name, weight=ct.weight, order=ct.order)
+    messages.success(request, f"Reja «{target_year.title}» yiliga nusxalandi.")
+    return redirect("portal:curricula")

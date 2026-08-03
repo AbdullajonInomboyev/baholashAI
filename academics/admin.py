@@ -67,3 +67,9 @@ class AcademicGroupAdmin(admin.ModelAdmin):
     list_display = ("name", "direction", "course", "study_form", "curator", "is_active")
     list_filter = ("course", "study_form", "is_active")
     search_fields = ("name",)
+
+from .models import CourseLiterature as _CourseLiterature
+admin.site.register(_CourseLiterature)
+
+from .models import ControlType as _ControlType
+admin.site.register(_ControlType)
