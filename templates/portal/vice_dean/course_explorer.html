@@ -13,26 +13,33 @@
 
 <div class="split">
   <div class="tree">
-    <div class="t-head">O‘quv yili → Yo‘nalish → Semestr</div>
+    <div class="t-head">O‘quv yili → Kafedra → Yo‘nalish → Semestr</div>
     {% for ynode in tree %}
     <details class="yr" {% if sel_year == ynode.year.pk|stringformat:'s' %}open{% endif %}>
       <summary>
         <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
         <span>{{ ynode.year.title }}</span>
       </summary>
-      {% for dnode in ynode.dirs %}
-      <details {% if sel_year == ynode.year.pk|stringformat:'s' and sel_dir == dnode.dir.pk|stringformat:'s' %}open{% endif %}>
+      {% for dnode in ynode.depts %}
+      <details open>
         <summary>
           <svg class="chev" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
-          <span>{{ dnode.dir.code }}</span><span class="cnt">{{ dnode.total }}</span>
+          <span>{% if dnode.dept %}{{ dnode.dept.name }}{% else %}Kafedra biriktirilmagan{% endif %}</span><span class="cnt">{{ dnode.total }}</span>
         </summary>
-        <a class="leaf all {% if sel_year == ynode.year.pk|stringformat:'s' and sel_dir == dnode.dir.pk|stringformat:'s' and not sel_sem and not sel_course %}active{% endif %}"
-           href="?year={{ ynode.year.pk }}&dir={{ dnode.dir.pk }}&form={{ study_form }}">Barcha fanlar<span class="cnt">{{ dnode.total }}</span></a>
-        {% for s in dnode.sems %}
-        <a class="leaf {% if sel_year == ynode.year.pk|stringformat:'s' and sel_dir == dnode.dir.pk|stringformat:'s' and sel_sem == s.n|stringformat:'s' %}active{% endif %}"
-           href="?year={{ ynode.year.pk }}&dir={{ dnode.dir.pk }}&sem={{ s.n }}&form={{ study_form }}">{{ s.n }}-semestr<span class="cnt">{{ s.count }}</span></a>
+        {% for dir in dnode.dirs %}
+        <details {% if sel_dir == dir.dir.pk|stringformat:'s' %}open{% endif %}>
+          <summary style="padding-left:22px">
+            <svg class="chev" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 6 6 6-6 6"/></svg>
+            <span>{{ dir.dir.code }}</span><span class="cnt">{{ dir.total }}</span>
+          </summary>
+          <a class="leaf all {% if sel_year == ynode.year.pk|stringformat:'s' and sel_dir == dir.dir.pk|stringformat:'s' and not sel_sem and not sel_course %}active{% endif %}"
+             href="?year={{ ynode.year.pk }}&dir={{ dir.dir.pk }}&form={{ study_form }}" style="padding-left:46px">Barcha fanlar<span class="cnt">{{ dir.total }}</span></a>
+          {% for s in dir.sems %}
+          <a class="leaf {% if sel_year == ynode.year.pk|stringformat:'s' and sel_dir == dir.dir.pk|stringformat:'s' and sel_sem == s.n|stringformat:'s' %}active{% endif %}"
+             href="?year={{ ynode.year.pk }}&dir={{ dir.dir.pk }}&sem={{ s.n }}&form={{ study_form }}" style="padding-left:58px">{{ s.n }}-semestr<span class="cnt">{{ s.count }}</span></a>
+          {% endfor %}
+        </details>
         {% endfor %}
-        {% if dnode.elective %}<div class="leaf" style="opacity:.7">Tanlov: {{ dnode.elective }} ta</div>{% endif %}
       </details>
       {% endfor %}
     </details>

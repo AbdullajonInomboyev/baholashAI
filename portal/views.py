@@ -112,7 +112,7 @@ def department_delete(request, pk):
 def directions(request):
     faculty, ctx = _base(request)
     ctx.update({"active": "directions",
-                "directions": Direction.objects.filter(faculty=faculty)})
+                "directions": Direction.objects.filter(faculty=faculty).select_related("department")})
     return render(request, "portal/vice_dean/directions.html", ctx)
 
 
@@ -120,7 +120,7 @@ def directions(request):
 def direction_form(request, pk=None):
     faculty, ctx = _base(request)
     instance = get_object_or_404(Direction, pk=pk, faculty=faculty) if pk else None
-    form = DirectionForm(request.POST or None, instance=instance)
+    form = DirectionForm(request.POST or None, instance=instance, faculty=faculty)
     if request.method == "POST" and form.is_valid():
         direction = form.save(commit=False)
         direction.faculty = faculty
@@ -575,13 +575,13 @@ def course_explorer(request):
     sel_sem = request.GET.get("sem")
     sel_course = request.GET.get("course")
 
-    # daraxt: yil -> yo'nalish -> semestr
+    # daraxt: yil -> kafedra -> yo'nalish -> semestr
     tree = []
     for y in years:
         curricula = (Curriculum.objects
                      .filter(academic_year=y, study_form=study_form, direction__faculty=faculty)
-                     .select_related("direction"))
-        dirs = []
+                     .select_related("direction__department"))
+        dept_map = {}  # dept -> [dir_node...]
         for cur in curricula:
             base = Course.objects.filter(curriculum=cur)
             sems = []
@@ -589,10 +589,17 @@ def course_explorer(request):
                 cnt = base.filter(placements__semester__number=n).distinct().count()
                 if cnt:
                     sems.append({"n": n, "count": cnt})
-            dirs.append({"dir": cur.direction, "total": base.count(), "sems": sems,
-                         "elective": base.filter(is_elective=True).count()})
-        if dirs:
-            tree.append({"year": y, "dirs": dirs})
+            node = {"dir": cur.direction, "total": base.count(), "sems": sems,
+                    "elective": base.filter(is_elective=True).count()}
+            dept = cur.direction.department
+            dept_map.setdefault(dept, []).append(node)
+        depts = []
+        for dept, dnodes in dept_map.items():
+            depts.append({"dept": dept, "dirs": dnodes,
+                          "total": sum(x["total"] for x in dnodes)})
+        depts.sort(key=lambda d: (d["dept"].name if d["dept"] else "яя"))
+        if depts:
+            tree.append({"year": y, "depts": depts})
 
     detail = None
     course_list = None

@@ -269,6 +269,12 @@ class Command(BaseCommand):
             code="60610100",
             defaults={"name": "Axborot tizimlari va texnologiyalari", "faculty": faculty},
         )
+        # mas'ul kafedra biriktiramiz (Yil -> Kafedra -> Yo'nalish ierarxiyasi uchun)
+        if direction.department_id is None:
+            dept = Department.objects.filter(faculty=faculty).first()
+            if dept:
+                direction.department = dept
+                direction.save(update_fields=["department"])
         curriculum, _ = Curriculum.objects.get_or_create(
             direction=direction, academic_year=year, study_form=StudyForm.FULL_TIME
         )

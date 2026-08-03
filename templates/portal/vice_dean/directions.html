@@ -5,8 +5,9 @@
 <div class="page-head"><h1>Yo‘nalishlar</h1><div class="spacer"></div>
   <a class="btn" href="{% url 'portal:direction_create' %}">Yangi yo‘nalish</a></div>
 {% if directions %}
-<table class="grid"><thead><tr><th>Kod</th><th>Nomi</th><th></th></tr></thead><tbody>
+<table class="grid"><thead><tr><th>Kod</th><th>Nomi</th><th>Mas‘ul kafedra</th><th></th></tr></thead><tbody>
   {% for d in directions %}<tr><td>{{ d.code }}</td><td>{{ d.name }}</td>
+    <td>{% if d.department %}{{ d.department.name }}{% else %}<span class="help">— biriktirilmagan</span>{% endif %}</td>
     <td class="actions"><a class="btn ghost sm" href="{% url 'portal:direction_edit' d.pk %}">Tahrirlash</a>
       <form class="inline-form" method="post" action="{% url 'portal:direction_delete' d.pk %}"
             onsubmit="return confirm('Yo‘nalish o‘chirilsinmi?')">{% csrf_token %}

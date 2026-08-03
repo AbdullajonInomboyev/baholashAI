@@ -21,8 +21,13 @@ class DepartmentForm(forms.ModelForm):
 class DirectionForm(forms.ModelForm):
     class Meta:
         model = Direction
-        fields = ["code", "name"]
-        labels = {"code": "Yo‘nalish kodi", "name": "Nomi"}
+        fields = ["department", "code", "name"]
+        labels = {"department": "Mas‘ul kafedra", "code": "Yo‘nalish kodi", "name": "Nomi"}
+
+    def __init__(self, *args, faculty=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if faculty is not None:
+            self.fields["department"].queryset = Department.objects.filter(faculty=faculty)
 
 
 class AcademicYearForm(forms.ModelForm):

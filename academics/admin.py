@@ -21,7 +21,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 @admin.register(Direction)
 class DirectionAdmin(admin.ModelAdmin):
-    list_display = ("code", "name", "faculty")
+    list_display = ("code", "name", "faculty", "department")
     search_fields = ("code", "name")
 
 

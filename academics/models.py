@@ -58,6 +58,10 @@ class Direction(models.Model):
     faculty = models.ForeignKey(
         Faculty, on_delete=models.CASCADE, related_name="directions", verbose_name="Fakultet"
     )
+    department = models.ForeignKey(
+        "academics.Department", on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="directions", verbose_name="Mas‘ul kafedra"
+    )
     code = models.CharField("Kod", max_length=50, unique=True)
     name = models.CharField("Nomi", max_length=255)
 
