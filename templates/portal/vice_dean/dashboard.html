@@ -6,11 +6,31 @@
 <div class="cards">
   <div class="card"><div class="n">{{ n_departments }}</div><div class="k">Kafedra</div></div>
   <div class="card"><div class="n">{{ n_directions }}</div><div class="k">Yo‘nalish</div></div>
-  <div class="card"><div class="n">{{ n_years }}</div><div class="k">O‘quv yili</div></div>
+  <div class="card"><div class="n">{{ n_groups }}</div><div class="k">Guruh</div></div>
   <div class="card"><div class="n">{{ n_courses }}</div><div class="k">Fan</div></div>
   <div class="card"><div class="n">{{ n_students }}</div><div class="k">Talaba</div></div>
-  <div class="card"><div class="n">{{ open_remarks }}</div><div class="k">Ochiq izoh</div></div>
+  <div class="card"><div class="n">{{ n_resources }}</div><div class="k">Resurs</div></div>
 </div>
+
+<div class="chart-row">
+  <div class="panel-card">
+    <h2>Fanlar statistikasi (semestr bo‘yicha)</h2>
+    {% include 'portal/vice_dean/_barchart.html' with chart=chart_sem %}
+  </div>
+  <div class="panel-card">
+    <h2>Kafedralar statistikasi (fanlar soni)</h2>
+    {% if chart_dept.bars %}{% include 'portal/vice_dean/_barchart.html' with chart=chart_dept %}
+    {% else %}<div class="empty">Kafedra ma‘lumoti yo‘q.</div>{% endif %}
+  </div>
+</div>
+
+<div class="chart-row">
+  <div class="panel-card"><h2>Resurslar statistikasi</h2>
+    {% include 'portal/vice_dean/_donut.html' with donut=chart_res legend=res_seg %}</div>
+  <div class="panel-card"><h2>Talabalar statistikasi</h2>
+    {% include 'portal/vice_dean/_donut.html' with donut=chart_stu legend=stu_seg %}</div>
+</div>
+
 <div class="panel-card">
   <h2>So‘nggi o‘quv yillari</h2>
   {% if recent_years %}
@@ -23,4 +43,16 @@
   </tbody></table>
   {% else %}<div class="empty">Hali o‘quv yili ochilmagan.</div>{% endif %}
 </div>
+
+<style>
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+@media(max-width:820px){.chart-row{grid-template-columns:1fr}}
+.chart-row svg{width:100%;height:auto;display:block}
+.chart-axis{stroke:var(--line,#eceef2)}
+.chart-vlabel{fill:#3f4a5a;font-size:12px;font-weight:600}
+.chart-blabel{fill:#8a93a3;font-size:11px}
+.donut-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.legend div{display:flex;align-items:center;gap:8px;font-size:13px;margin:6px 0}
+.legend .sw{width:12px;height:12px;border-radius:3px;flex:none}
+</style>
 {% endblock %}

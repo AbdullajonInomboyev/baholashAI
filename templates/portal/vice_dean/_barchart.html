@@ -1,0 +1,10 @@
+<svg viewBox="0 0 {{ chart.width }} {{ chart.height }}" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="bargrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0" stop-color="#5b78ec"/><stop offset="1" stop-color="#3d5ee1"/></linearGradient></defs>
+  <line class="chart-axis" x1="30" y1="{{ chart.baseline }}" x2="{{ chart.width }}" y2="{{ chart.baseline }}"/>
+  {% for b in chart.bars %}
+    <rect x="{{ b.x }}" y="{{ b.y }}" width="{{ b.w }}" height="{{ b.h }}" rx="4" fill="url(#bargrad)"/>
+    {% if b.value %}<text class="chart-vlabel" x="{{ b.cx }}" y="{{ b.value_y }}" text-anchor="middle">{{ b.value }}</text>{% endif %}
+    <text class="chart-blabel" x="{{ b.cx }}" y="{{ chart.label_y }}" text-anchor="middle">{{ b.label }}</text>
+  {% endfor %}
+</svg>

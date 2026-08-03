@@ -48,20 +48,57 @@ def _xlsx_response(data, filename):
 
 @role_required(Role.VICE_DEAN)
 def dashboard(request):
+    from academics.models import AcademicGroup
+    from teaching.models import Resource
+    from portal.services import charts
     faculty, ctx = _base(request)
     if not faculty:
         return render(request, "portal/vice_dean/no_faculty.html", ctx)
     directions = Direction.objects.filter(faculty=faculty)
+
+    # --- grafik ma'lumotlari ---
+    sem_data = []
+    for n in range(1, 9):
+        cnt = Course.objects.filter(curriculum__direction__in=directions,
+                                    placements__semester__number=n).distinct().count()
+        sem_data.append((str(n), cnt))
+    dept_data = []
+    for dept in Department.objects.filter(faculty=faculty)[:8]:
+        cnt = Course.objects.filter(curriculum__direction__department=dept).count()
+        dept_data.append((dept.name[:14], cnt))
+
+    res_qs = Resource.objects.filter(
+        links__teacher_assignment__department_course__department__faculty=faculty).distinct()
+    res_seg = [
+        ("Tasdiqlangan", res_qs.filter(approval_status="approved").count(), "#0fb981"),
+        ("Kutilmoqda", res_qs.filter(approval_status="pending").count(), "#f4a52a"),
+        ("Rad etilgan", res_qs.filter(approval_status="rejected").count(), "#e8476a"),
+    ]
+    st_qs = StudentEnrollment.objects.filter(academic_year__faculty=faculty)
+    stu_seg = [
+        ("Faol", st_qs.filter(status="active").count(), "#3d5ee1"),
+        ("Akadem. ta'til", st_qs.filter(status="academic_leave").count(), "#f4a52a"),
+        ("Chetlashtirilgan", st_qs.filter(status="expelled").count(), "#e8476a"),
+        ("Bitirgan", st_qs.filter(status="graduated").count(), "#0aa5e9"),
+    ]
+
     ctx.update({
         "active": "dashboard",
         "n_departments": Department.objects.filter(faculty=faculty).count(),
         "n_directions": directions.count(),
         "n_years": AcademicYear.objects.filter(faculty=faculty).count(),
         "n_courses": Course.objects.filter(curriculum__direction__in=directions).count(),
-        "n_students": StudentEnrollment.objects.filter(academic_year__faculty=faculty).count(),
+        "n_students": st_qs.count(),
+        "n_groups": AcademicGroup.objects.filter(direction__in=directions).count(),
+        "n_resources": res_qs.count(),
         "open_remarks": ReviewRemark.objects.filter(
             department__faculty=faculty, status=ReviewRemark.Status.OPEN).count(),
         "recent_years": AcademicYear.objects.filter(faculty=faculty)[:5],
+        "chart_sem": charts.bar_chart(sem_data),
+        "chart_dept": charts.bar_chart(dept_data),
+        "chart_res": charts.donut([s for s in res_seg]),
+        "chart_stu": charts.donut([s for s in stu_seg]),
+        "res_seg": res_seg, "stu_seg": stu_seg,
     })
     return render(request, "portal/vice_dean/dashboard.html", ctx)
 

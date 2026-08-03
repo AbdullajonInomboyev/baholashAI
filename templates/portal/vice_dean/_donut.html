@@ -1,0 +1,10 @@
+<div class="donut-wrap">
+  <svg viewBox="0 0 {{ donut.size }} {{ donut.size }}" width="150" height="150" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="{{ donut.cx }}" cy="{{ donut.cy }}" r="{{ donut.r }}" fill="none" stroke="#eef1f6" stroke-width="{{ donut.thickness }}"/>
+    {% for s in donut.segments %}{% if s.value %}<path d="{{ s.d }}" fill="none" stroke="{{ s.color }}" stroke-width="{{ donut.thickness }}"/>{% endif %}{% endfor %}
+    <text x="{{ donut.cx }}" y="{{ donut.cy }}" text-anchor="middle" dominant-baseline="central" style="font-size:26px;font-weight:800;fill:#1f2937">{{ donut.total }}</text>
+  </svg>
+  <div class="legend">
+    {% for lab, val, color in legend %}<div><span class="sw" style="background:{{ color }}"></span>{{ lab }} — <b>{{ val }}</b></div>{% endfor %}
+  </div>
+</div>
