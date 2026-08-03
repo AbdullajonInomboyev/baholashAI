@@ -5,7 +5,9 @@
 <div class="page-head"><h1>Talabalar</h1><div class="spacer"></div>
   {% if year_id %}
   <a class="btn ghost" href="{% url 'portal:student_template' %}">Shablon</a>
-  <a class="btn ghost" href="{% url 'portal:student_export' %}?year={{ year_id }}">Export (Excel)</a>
+  <a class="btn ghost" href="{% url 'portal:student_export' %}?year={{ year_id }}">Excel</a>
+  <a class="btn ghost" href="{% url 'portal:student_export_csv' %}?year={{ year_id }}">CSV</a>
+  <a class="btn ghost" href="{% url 'portal:student_export_pdf' %}?year={{ year_id }}">PDF</a>
   {% endif %}
 </div>
 
@@ -14,6 +16,11 @@
   <select onchange="location.href='?year='+this.value">
     {% for y in years %}<option value="{{ y.pk }}" {% if y.pk == year_id %}selected{% endif %}>{{ y.title }}</option>{% endfor %}
   </select></div>
+</div>
+
+<div class="filters" style="margin-bottom:14px">
+  <a class="chip {% if not f_status %}active{% endif %}" href="?year={{ year_id }}">Barchasi</a>
+  {% for val, label in statuses %}<a class="chip {% if f_status == val %}active{% endif %}" href="?year={{ year_id }}&status={{ val }}">{{ label }}</a>{% endfor %}
 </div>
 
 <div class="panel-card">
@@ -34,8 +41,12 @@
     <td>{{ e.direction.code }}</td>
     <td>{{ e.get_study_form_display }}</td>
     <td>{{ e.group_name }}</td>
-    <td><span class="tag {% if e.status == 'active' %}ok{% else %}mut{% endif %}">{{ e.get_status_display }}</span></td>
+    <td><span class="tag {% if e.status == 'active' %}ok{% elif e.status == 'expelled' %}bad{% else %}mut{% endif %}">{{ e.get_status_display }}</span></td>
     <td class="actions">
+      <form class="inline-form" method="post" action="{% url 'portal:student_status' e.pk %}">{% csrf_token %}
+        <select name="status" onchange="this.form.submit()" style="padding:5px;border:1px solid var(--line);border-radius:6px;font-size:12px">
+          {% for val, label in statuses %}<option value="{{ val }}" {% if e.status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select></form>
       <a class="btn ghost sm" href="{% url 'portal:student_edit' e.pk %}">Tahrir</a>
       <form class="inline-form" method="post" action="{% url 'portal:student_delete' e.pk %}"
             onsubmit="return confirm('Talaba biriktiruvi olib tashlansinmi?')">{% csrf_token %}

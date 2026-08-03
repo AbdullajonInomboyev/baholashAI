@@ -59,6 +59,10 @@ urlpatterns = [
     path("talabalar/<int:pk>/ochirish/", views.student_delete, name="student_delete"),
 
     path("talabalar/", views.student_list, name="students"),
+    path("talabalar/eksport/csv/", views.student_export_csv, name="student_export_csv"),
+    path("talabalar/eksport/pdf/", views.student_export_pdf, name="student_export_pdf"),
+    path("talabalar/<int:pk>/holat/", views.student_status, name="student_status"),
+
     path("talabalar/import/", views.student_import, name="student_import"),
     path("talabalar/export/", views.student_export, name="student_export"),
     path("talabalar/shablon/", views.student_template, name="student_template"),

@@ -266,9 +266,13 @@ def student_list(request):
                    .select_related("student", "direction", "academic_year"))
     if year_id:
         enrollments = enrollments.filter(academic_year_id=year_id)
+    status = request.GET.get("status")
+    if status:
+        enrollments = enrollments.filter(status=status)
     page, qstring = _paginate(request, enrollments.order_by("group_name", "student__full_name"), 30)
     ctx.update({"active": "students", "years": years, "year_id": int(year_id) if year_id else None,
-                "enrollments": page, "page_obj": page, "qstring": qstring,
+                "enrollments": page, "page_obj": page, "qstring": qstring, "f_status": status,
+                "statuses": StudentEnrollment.Status.choices,
                 "import_form": StudentImportForm()})
     return render(request, "portal/vice_dean/students.html", ctx)
 
@@ -809,3 +813,75 @@ def teacher_profile(request, pk):
     ctx.update({"active": "teachers", "teacher_obj": teacher, "assignments": assignments,
                 "total_hours": total_hours, "curated_groups": groups})
     return render(request, "portal/vice_dean/teacher_profile.html", ctx)
+
+
+# ==================== Talaba akademik holati + eksport ====================
+
+@role_required(Role.VICE_DEAN)
+def student_status(request, pk):
+    faculty, _ = _base(request)
+    enr = get_object_or_404(StudentEnrollment, pk=pk, academic_year__faculty=faculty)
+    new_status = request.POST.get("status")
+    if new_status in dict(StudentEnrollment.Status.choices):
+        enr.status = new_status
+        enr.save(update_fields=["status"])
+        messages.success(request, "Talaba holati yangilandi.")
+    return redirect(f"/zamdekan/talabalar/?year={enr.academic_year_id}")
+
+
+def _student_rows(faculty, year_id=None):
+    qs = (StudentEnrollment.objects.filter(academic_year__faculty=faculty)
+          .select_related("student", "direction", "academic_year"))
+    if year_id:
+        qs = qs.filter(academic_year_id=year_id)
+    return qs.order_by("group_name", "student__full_name")
+
+
+@role_required(Role.VICE_DEAN)
+def student_export_csv(request):
+    import csv
+    faculty, _ = _base(request)
+    year_id = request.GET.get("year")
+    resp = HttpResponse(content_type="text/csv; charset=utf-8")
+    resp["Content-Disposition"] = 'attachment; filename="talabalar.csv"'
+    resp.write("\ufeff")  # Excel uchun UTF-8 BOM
+    w = csv.writer(resp)
+    w.writerow(["F.I.Sh.", "Guruh", "Yo‘nalish", "O‘quv yili", "Holati"])
+    for e in _student_rows(faculty, year_id):
+        w.writerow([e.student.full_name or e.student.username, e.group_name,
+                    e.direction.code, e.academic_year.title, e.get_status_display()])
+    return resp
+
+
+@role_required(Role.VICE_DEAN)
+def student_export_pdf(request):
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    from io import BytesIO
+    faculty, _ = _base(request)
+    year_id = request.GET.get("year")
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=18 * mm, bottomMargin=14 * mm)
+    styles = getSampleStyleSheet()
+    elems = [Paragraph("Talabalar ro‘yxati", styles["Title"]), Spacer(1, 8)]
+    rows = [["F.I.Sh.", "Guruh", "Yo‘nalish", "Holati"]]
+    for e in _student_rows(faculty, year_id):
+        rows.append([e.student.full_name or e.student.username, e.group_name,
+                     e.direction.code, e.get_status_display()])
+    t = Table(rows, repeatRows=1, hAlign="LEFT")
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#274690")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#c9cede")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f3f1ea")]),
+        ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    elems.append(t)
+    doc.build(elems)
+    resp = HttpResponse(buf.getvalue(), content_type="application/pdf")
+    resp["Content-Disposition"] = 'attachment; filename="talabalar.pdf"'
+    return resp
