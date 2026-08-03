@@ -1,0 +1,28 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Elektron resurslar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Elektron resurslar</h1></div>
+<div class="filters" style="margin-bottom:14px">
+  {% for val, label in statuses %}<a class="chip {% if f_status == val %}active{% endif %}" href="?status={{ val }}">{{ label }}</a>{% endfor %}
+</div>
+{% if resources %}
+<table class="grid"><thead><tr><th>Resurs</th><th>Fan</th><th>O‘qituvchi</th><th>AI moslik</th><th>Holat</th><th>Amal</th></tr></thead><tbody>
+  {% for r in resources %}<tr>
+    <td><b>{{ r.title }}</b> <span class="tag mut">{{ r.get_resource_format_display }}</span>
+      {% if r.review_note %}<div class="help">Izoh: {{ r.review_note }}</div>{% endif %}</td>
+    <td>{% for l in r.links.all %}<span class="tag mut">{{ l.teacher_assignment.department_course.course.code }}</span> {% endfor %}</td>
+    <td>{{ r.uploaded_by.full_name|default:r.uploaded_by.username }}</td>
+    <td>{% if r.review and r.review.match_score != None %}<span class="tag {% if r.review.match_score < 80 %}bad{% else %}ok{% endif %}">{{ r.review.match_score }}%</span>{% else %}<span class="tag warn">—</span>{% endif %}</td>
+    <td>{% if r.approval_status == 'approved' %}<span class="tag ok">Tasdiqlangan</span>{% elif r.approval_status == 'rejected' %}<span class="tag bad">Rad etilgan</span>{% else %}<span class="tag warn">Kutilmoqda</span>{% endif %}</td>
+    <td class="actions">
+      {% if r.resource_format == 'file' and r.file %}<a class="btn ghost sm" href="{{ r.file.url }}">Ko‘rish</a>{% elif r.url %}<a class="btn ghost sm" href="{{ r.url }}" target="_blank">Ko‘rish</a>{% endif %}
+      {% if r.approval_status != 'approved' %}
+      <form class="inline-form" method="post" action="{% url 'portal:resource_approve' r.pk %}">{% csrf_token %}<button class="btn sm" type="submit">Tasdiqlash</button></form>{% endif %}
+      {% if r.approval_status != 'rejected' %}
+      <form class="inline-form" method="post" action="{% url 'portal:resource_reject' r.pk %}" onsubmit="var n=prompt('Rad sababi:'); if(n===null) return false; this.note.value=n;">{% csrf_token %}<input type="hidden" name="note"><button class="btn ghost sm" type="submit">Rad etish</button></form>{% endif %}
+    </td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Bu holatda resurs yo‘q.</div>{% endif %}
+{% endblock %}

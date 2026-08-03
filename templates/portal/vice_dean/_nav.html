@@ -15,6 +15,8 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M4 21V5a1 1 0 0 1 1-1h6v17M14 21V9a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v12"/><path d="M7 8h.01M7 12h.01"/></svg><span>Auditoriyalar</span></a>
 <a href="{% url 'portal:teachers' %}" class="{% if active == 'teachers' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM6 10v6c0 1 3 3 6 3s6-2 6-3v-6"/></svg><span>O‘qituvchilar</span></a>
+<a href="{% url 'portal:eresources' %}" class="{% if active == 'eresources' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Elektron resurslar</span></a>
 <div class="group">O‘quv reja</div>
 <a href="{% url 'portal:years' %}" class="{% if active == 'years' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>

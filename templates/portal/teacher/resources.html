@@ -22,12 +22,13 @@
   </form>
 </div>
 {% if resources %}
-<table class="grid"><thead><tr><th>Sarlavha</th><th>Ko‘rinishi</th><th>Turkum</th><th>Fanlar</th><th>AI moslik</th><th></th></tr></thead><tbody>
+<table class="grid"><thead><tr><th>Sarlavha</th><th>Ko‘rinishi</th><th>Turkum</th><th>Fanlar</th><th>Tasdiq</th><th>AI moslik</th><th></th></tr></thead><tbody>
   {% for r in resources %}<tr>
-    <td>{{ r.title }}</td>
+    <td>{{ r.title }}{% if r.approval_status == 'rejected' and r.review_note %}<div class="help">Rad sababi: {{ r.review_note }}</div>{% endif %}</td>
     <td><span class="tag mut">{{ r.get_resource_format_display }}</span></td>
     <td>{{ r.get_kind_display }}</td>
     <td>{% for l in r.links.all %}<span class="tag mut">{{ l.teacher_assignment.department_course.course.code }}</span> {% endfor %}</td>
+    <td>{% if r.approval_status == 'approved' %}<span class="tag ok">Tasdiqlangan</span>{% elif r.approval_status == 'rejected' %}<span class="tag bad">Rad etilgan</span>{% else %}<span class="tag warn">Kutilmoqda</span>{% endif %}</td>
     <td>{% if r.review and r.review.match_score != None %}<span class="tag {% if r.review.match_score < 80 %}bad{% else %}ok{% endif %}">{{ r.review.match_score }}%</span>{% else %}<span class="tag warn">Tahlilda</span>{% endif %}</td>
     <td>{% if r.resource_format == 'file' and r.file %}<a href="{{ r.file.url }}">Ochish</a>{% elif r.url %}<a href="{{ r.url }}" target="_blank">Ochish</a>{% elif r.content %}<span class="help">matn</span>{% endif %}</td>
   </tr>{% endfor %}

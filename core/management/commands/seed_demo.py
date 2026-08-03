@@ -169,6 +169,19 @@ class Command(BaseCommand):
                               "match_score": 90, "completeness_score": 85,
                               "feedback": "Namunaviy AI xulosasi."})
 
+        # resurslarga namunaviy tasdiq holatlari
+        res_all = list(Resource.objects.filter(uploaded_by=teacher).order_by("id"))
+        statuses = [
+            (Resource.ApprovalStatus.APPROVED, ""),
+            (Resource.ApprovalStatus.PENDING, ""),
+            (Resource.ApprovalStatus.REJECTED, "Sifat past — mavzular to‘liq yoritilmagan."),
+        ]
+        for idx, res in enumerate(res_all):
+            st, note = statuses[idx % len(statuses)]
+            res.approval_status = st
+            res.review_note = note
+            res.save(update_fields=["approval_status", "review_note"])
+
         # bir nechta talaba
         for i in range(1, 4):
             username = f"talaba{i}"

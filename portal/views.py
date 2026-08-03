@@ -885,3 +885,64 @@ def student_export_pdf(request):
     resp = HttpResponse(buf.getvalue(), content_type="application/pdf")
     resp["Content-Disposition"] = 'attachment; filename="talabalar.pdf"'
     return resp
+
+
+# ==================== Elektron resurslar (tasdiqlash workflow) ====================
+
+@role_required(Role.VICE_DEAN)
+def resources_review(request):
+    from teaching.models import Resource
+    faculty, ctx = _base(request)
+    status = request.GET.get("status", "pending")
+    qs = (Resource.objects
+          .filter(links__teacher_assignment__department_course__department__faculty=faculty)
+          .distinct()
+          .select_related("uploaded_by", "review")
+          .prefetch_related("links__teacher_assignment__department_course__course"))
+    if status in dict(Resource.ApprovalStatus.choices):
+        qs = qs.filter(approval_status=status)
+    counts = {s: Resource.objects.filter(
+                links__teacher_assignment__department_course__department__faculty=faculty,
+                approval_status=s).distinct().count()
+              for s, _ in Resource.ApprovalStatus.choices}
+    ctx.update({"active": "eresources", "resources": qs, "f_status": status,
+                "statuses": Resource.ApprovalStatus.choices, "counts": counts})
+    return render(request, "portal/vice_dean/eresources.html", ctx)
+
+
+def _review_resource_action(request, pk, status):
+    from django.utils import timezone as tz
+    from core.notifications import notify
+    from django.urls import reverse
+    from teaching.models import Resource
+    faculty, _ = _base(request)
+    r = get_object_or_404(
+        Resource.objects.filter(
+            links__teacher_assignment__department_course__department__faculty=faculty).distinct(),
+        pk=pk)
+    r.approval_status = status
+    r.review_note = request.POST.get("note", "").strip()
+    r.reviewed_by = request.user
+    r.reviewed_at = tz.now()
+    r.save(update_fields=["approval_status", "review_note", "reviewed_by", "reviewed_at"])
+    label = dict(Resource.ApprovalStatus.choices)[status]
+    notify(r.uploaded_by, f"«{r.title}» resursi: {label}"
+           + (f" — {r.review_note}" if r.review_note else ""),
+           reverse("portal:teacher_resources"))
+    return r
+
+
+@role_required(Role.VICE_DEAN)
+def resource_approve(request, pk):
+    from teaching.models import Resource
+    _review_resource_action(request, pk, Resource.ApprovalStatus.APPROVED)
+    messages.success(request, "Resurs tasdiqlandi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:eresources"))
+
+
+@role_required(Role.VICE_DEAN)
+def resource_reject(request, pk):
+    from teaching.models import Resource
+    _review_resource_action(request, pk, Resource.ApprovalStatus.REJECTED)
+    messages.success(request, "Resurs rad etildi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:eresources"))

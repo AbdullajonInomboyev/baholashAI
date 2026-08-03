@@ -92,6 +92,22 @@ class Resource(models.Model):
     kind = models.CharField("Turi", max_length=20, choices=Kind.choices, default=Kind.OTHER)
     created_at = models.DateTimeField(default=timezone.now)
 
+    class ApprovalStatus(models.TextChoices):
+        PENDING = "pending", "Kutilmoqda"
+        APPROVED = "approved", "Tasdiqlangan"
+        REJECTED = "rejected", "Rad etilgan"
+
+    approval_status = models.CharField(
+        "Tasdiq holati", max_length=12, choices=ApprovalStatus.choices,
+        default=ApprovalStatus.PENDING
+    )
+    review_note = models.TextField("Izoh / rad sababi", blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="reviewed_resources"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         verbose_name = "Resurs"
         verbose_name_plural = "Resurslar"
