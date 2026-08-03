@@ -1,0 +1,31 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ teacher_obj.full_name|default:teacher_obj.username }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ teacher_obj.full_name|default:teacher_obj.username }}</h1></div>
+<div class="cards" style="margin-bottom:16px">
+  <div class="card"><div class="n">{{ assignments|length }}</div><div class="k">Biriktirilgan fanlar</div></div>
+  <div class="card"><div class="n">{{ total_hours }}</div><div class="k">Yillik yuklama (soat)</div></div>
+  <div class="card"><div class="n">{{ curated_groups|length }}</div><div class="k">Kuratorlik guruhlari</div></div>
+</div>
+<div class="panel-card">
+  <h2>Biriktirilgan fanlar</h2>
+  {% if assignments %}
+  <table class="grid"><thead><tr><th>Kod</th><th>Fan</th><th>Kafedra</th><th>Soat</th></tr></thead><tbody>
+    {% for a in assignments %}<tr>
+      <td>{{ a.department_course.course.code }}</td>
+      <td>{{ a.department_course.course.name }}</td>
+      <td>{{ a.department_course.department.name }}</td>
+      <td>{{ a.department_course.course.total_hours }}</td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Fan biriktirilmagan.</div>{% endif %}
+</div>
+{% if curated_groups %}
+<div class="panel-card">
+  <h2>Kuratorlik guruhlari</h2>
+  {% for g in curated_groups %}<span class="tag ok">{{ g.name }} ({{ g.course }}-kurs)</span> {% endfor %}
+</div>
+{% endif %}
+<a class="btn ghost" href="{% url 'portal:teachers' %}">← O‘qituvchilar</a>
+{% endblock %}

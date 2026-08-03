@@ -1,6 +1,7 @@
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.http import HttpResponse
+from django.contrib.auth import get_user_model
 from django.core.paginator import Paginator
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -768,3 +769,43 @@ def room_delete(request, pk):
     get_object_or_404(Room, pk=pk).delete()
     messages.success(request, "Auditoriya o‘chirildi.")
     return redirect("portal:rooms")
+
+
+# ==================== O'qituvchilar (zam dekan ko'rinishi) ====================
+
+@role_required(Role.VICE_DEAN)
+def teachers_list(request):
+    from teaching.models import TeacherAssignment
+    faculty, ctx = _base(request)
+    assignments = (TeacherAssignment.objects
+                   .filter(status=TeacherAssignment.Status.ACTIVE,
+                           department_course__department__faculty=faculty)
+                   .select_related("teacher", "department_course__course",
+                                   "department_course__department"))
+    rows = {}
+    for a in assignments:
+        t = a.teacher
+        row = rows.setdefault(t.id, {"teacher": t, "depts": set(), "courses": 0, "hours": 0})
+        row["depts"].add(a.department_course.department.name)
+        row["courses"] += 1
+        row["hours"] += a.department_course.course.total_hours or 0
+    teachers = sorted(rows.values(), key=lambda r: (r["teacher"].full_name or r["teacher"].username))
+    ctx.update({"active": "teachers", "teachers": teachers})
+    return render(request, "portal/vice_dean/teachers.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def teacher_profile(request, pk):
+    from academics.models import AcademicGroup
+    from teaching.models import TeacherAssignment
+    faculty, ctx = _base(request)
+    teacher = get_object_or_404(get_user_model(), pk=pk)
+    assignments = (TeacherAssignment.objects
+                   .filter(teacher=teacher, status=TeacherAssignment.Status.ACTIVE,
+                           department_course__department__faculty=faculty)
+                   .select_related("department_course__course", "department_course__department"))
+    total_hours = sum(a.department_course.course.total_hours or 0 for a in assignments)
+    groups = AcademicGroup.objects.filter(curator=teacher, direction__faculty=faculty)
+    ctx.update({"active": "teachers", "teacher_obj": teacher, "assignments": assignments,
+                "total_hours": total_hours, "curated_groups": groups})
+    return render(request, "portal/vice_dean/teacher_profile.html", ctx)
