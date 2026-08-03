@@ -218,3 +218,21 @@ class AcademicGroupForm(forms.ModelForm):
             self.fields["curator"].queryset = (
                 get_user_model().objects.filter(roles__role=Role.TEACHER).distinct()
             )
+
+
+from schedule.models import Building, Room  # noqa: E402
+
+
+class BuildingForm(forms.ModelForm):
+    class Meta:
+        model = Building
+        fields = ["name", "address", "is_active"]
+        labels = {"name": "Bino nomi", "address": "Manzil", "is_active": "Faol"}
+
+
+class RoomForm(forms.ModelForm):
+    class Meta:
+        model = Room
+        fields = ["building", "name", "kind", "capacity", "floor", "is_active"]
+        labels = {"building": "Bino", "name": "Xona raqami", "kind": "Turi",
+                  "capacity": "Sig‘imi", "floor": "Qavat", "is_active": "Faol"}

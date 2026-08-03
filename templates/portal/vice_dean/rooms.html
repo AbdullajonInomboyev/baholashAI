@@ -1,0 +1,47 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Auditoriyalar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Auditoriyalar</h1></div>
+
+<div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+  <div class="panel-card"><h2>Yangi bino</h2>
+    <form class="stack" method="post" action="{% url 'portal:building_create' %}">{% csrf_token %}
+      <label>{{ building_form.name.label }}</label>{{ building_form.name }}
+      <label>{{ building_form.address.label }}</label>{{ building_form.address }}
+      <div style="margin-top:10px"><button class="btn sm" type="submit">Qo‘shish</button></div>
+    </form>
+  </div>
+  <div class="panel-card"><h2>Yangi auditoriya</h2>
+    <form class="stack" method="post" action="{% url 'portal:room_create' %}">{% csrf_token %}
+      <label>{{ room_form.building.label }}</label>{{ room_form.building }}
+      <div class="row"><div><label>{{ room_form.name.label }}</label>{{ room_form.name }}</div>
+        <div><label>{{ room_form.kind.label }}</label>{{ room_form.kind }}</div></div>
+      <div class="row"><div><label>{{ room_form.capacity.label }}</label>{{ room_form.capacity }}</div>
+        <div><label>{{ room_form.floor.label }}</label>{{ room_form.floor }}</div></div>
+      <div style="margin-top:10px"><button class="btn sm" type="submit">Qo‘shish</button></div>
+    </form>
+  </div>
+</div>
+
+{% for b in buildings %}
+<div class="panel-card">
+  <h2 style="display:flex;align-items:center">{{ b.name }} <span class="help" style="margin-left:8px">({{ b.room_count }} xona)</span>
+    <span style="margin-left:auto;display:flex;gap:6px">
+      <a class="btn ghost sm" href="{% url 'portal:building_edit' b.pk %}">Tahrirlash</a>
+      <form class="inline-form" method="post" action="{% url 'portal:building_delete' b.pk %}" onsubmit="return confirm('Bino va uning xonalari o‘chirilsinmi?')">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form>
+    </span>
+  </h2>
+  {% if b.rooms.all %}
+  <table class="grid"><thead><tr><th>Xona</th><th>Turi</th><th>Sig‘imi</th><th>Qavat</th><th>Holat</th><th></th></tr></thead><tbody>
+    {% for r in b.rooms.all %}<tr>
+      <td><b>{{ r.name }}</b></td><td>{{ r.get_kind_display }}</td><td>{{ r.capacity }}</td><td>{{ r.floor }}</td>
+      <td>{% if r.is_active %}<span class="tag ok">Faol</span>{% else %}<span class="tag mut">Nofaol</span>{% endif %}</td>
+      <td class="actions"><a class="btn ghost sm" href="{% url 'portal:room_edit' r.pk %}">Tahrirlash</a>
+        <form class="inline-form" method="post" action="{% url 'portal:room_delete' r.pk %}">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Xona qo‘shilmagan.</div>{% endif %}
+</div>
+{% empty %}<div class="empty">Bino yo‘q. Yuqoridan qo‘shing.</div>{% endfor %}
+{% endblock %}

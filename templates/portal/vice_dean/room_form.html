@@ -1,0 +1,13 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ kind_label }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ kind_label }}ni {% if instance %}tahrirlash{% else %}qo‘shish{% endif %}</h1></div>
+<div class="panel-card" style="max-width:520px">
+  <form class="stack" method="post">{% csrf_token %}
+    {% for f in form %}<label>{{ f.label }}</label>{{ f }}{% endfor %}
+    <div style="margin-top:14px"><button class="btn" type="submit">Saqlash</button>
+      <a class="btn ghost" href="{% url 'portal:rooms' %}">Bekor</a></div>
+  </form>
+</div>
+{% endblock %}

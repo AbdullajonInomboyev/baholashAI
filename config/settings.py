@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "assessment",
     "core",
     "portal",
+    "schedule",
 ]
 
 MIDDLEWARE = [

@@ -17,6 +17,13 @@ urlpatterns = [
 
     path("yonalishlar/", views.directions, name="directions"),
     path("guruhlar/", views.groups, name="groups"),
+    path("auditoriyalar/", views.rooms_overview, name="rooms"),
+    path("auditoriyalar/bino/yangi/", views.building_form, name="building_create"),
+    path("auditoriyalar/bino/<int:pk>/tahrir/", views.building_form, name="building_edit"),
+    path("auditoriyalar/bino/<int:pk>/ochirish/", views.building_delete, name="building_delete"),
+    path("auditoriyalar/xona/yangi/", views.room_form, name="room_create"),
+    path("auditoriyalar/xona/<int:pk>/tahrir/", views.room_form, name="room_edit"),
+    path("auditoriyalar/xona/<int:pk>/ochirish/", views.room_delete, name="room_delete"),
     path("guruhlar/yangi/", views.group_form, name="group_create"),
     path("guruhlar/<int:pk>/", views.group_detail, name="group_detail"),
     path("guruhlar/<int:pk>/tahrir/", views.group_form, name="group_edit"),

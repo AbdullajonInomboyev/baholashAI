@@ -713,3 +713,58 @@ def group_remove_student(request, pk, enr_pk):
     enr.save(update_fields=["group"])
     messages.success(request, "Talaba guruhdan chiqarildi.")
     return redirect("portal:group_detail", pk=pk)
+
+
+# ==================== Auditoriyalar (binolar/xonalar) ====================
+
+from portal.forms import BuildingForm, RoomForm  # noqa: E402
+from schedule.models import Building, Room  # noqa: E402
+
+
+@role_required(Role.VICE_DEAN)
+def rooms_overview(request):
+    faculty, ctx = _base(request)
+    buildings = Building.objects.prefetch_related("rooms").all()
+    ctx.update({"active": "rooms", "buildings": buildings,
+                "building_form": BuildingForm(), "room_form": RoomForm()})
+    return render(request, "portal/vice_dean/rooms.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def building_form(request, pk=None):
+    faculty, ctx = _base(request)
+    instance = get_object_or_404(Building, pk=pk) if pk else None
+    form = BuildingForm(request.POST or None, instance=instance)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Bino saqlandi.")
+        return redirect("portal:rooms")
+    ctx.update({"active": "rooms", "form": form, "instance": instance, "kind_label": "Bino"})
+    return render(request, "portal/vice_dean/room_form.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def building_delete(request, pk):
+    get_object_or_404(Building, pk=pk).delete()
+    messages.success(request, "Bino o‘chirildi.")
+    return redirect("portal:rooms")
+
+
+@role_required(Role.VICE_DEAN)
+def room_form(request, pk=None):
+    faculty, ctx = _base(request)
+    instance = get_object_or_404(Room, pk=pk) if pk else None
+    form = RoomForm(request.POST or None, instance=instance)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Auditoriya saqlandi.")
+        return redirect("portal:rooms")
+    ctx.update({"active": "rooms", "form": form, "instance": instance, "kind_label": "Auditoriya"})
+    return render(request, "portal/vice_dean/room_form.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def room_delete(request, pk):
+    get_object_or_404(Room, pk=pk).delete()
+    messages.success(request, "Auditoriya o‘chirildi.")
+    return redirect("portal:rooms")

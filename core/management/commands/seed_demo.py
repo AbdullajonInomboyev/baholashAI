@@ -209,6 +209,7 @@ class Command(BaseCommand):
         self._seed_assignments(assignments)
         self._seed_quiz(assignments)
         self._seed_notifications()
+        self._seed_rooms()
 
     def _seed_assignments(self, assignments):
         """Namunaviy topshiriq + topshirilgan ishlar (o'qituvchi baholashi uchun)."""
@@ -363,3 +364,18 @@ class Command(BaseCommand):
             Notification.objects.create(user=talaba, message="Yangi topshiriq: 1-amaliy ish", url="/zamdekan/talaba/topshiriqlar/")
             Notification.objects.create(user=talaba, message="Yangi test: Kirish testi", url="/zamdekan/talaba/testlar/")
             Notification.objects.create(user=talaba, message="«1-amaliy ish» ishingizga baho qo\u2018yildi", url="/zamdekan/talaba/baholar/", is_read=True)
+
+
+    def _seed_rooms(self):
+        from schedule.models import Building, Room
+        b1, _ = Building.objects.get_or_create(name="Bosh bino", defaults={"address": "Universitet ko‘chasi 1"})
+        b2, _ = Building.objects.get_or_create(name="IT bino", defaults={"address": "Universitet ko‘chasi 3"})
+        rooms = [
+            (b1, "101", Room.Kind.LECTURE, 60, 1), (b1, "102", Room.Kind.PRACTICE, 30, 1),
+            (b1, "201", Room.Kind.LECTURE, 80, 2),
+            (b2, "A-1", Room.Kind.COMPUTER, 25, 1), (b2, "A-2", Room.Kind.LAB, 20, 1),
+            (b2, "B-1", Room.Kind.COMPUTER, 25, 2),
+        ]
+        for b, name, kind, cap, floor in rooms:
+            Room.objects.get_or_create(building=b, name=name,
+                defaults={"kind": kind, "capacity": cap, "floor": floor})
