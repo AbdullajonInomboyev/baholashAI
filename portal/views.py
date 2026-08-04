@@ -1114,3 +1114,99 @@ def curriculum_copy(request, pk):
             ControlType.objects.create(course=new_c, name=ct.name, weight=ct.weight, order=ct.order)
     messages.success(request, f"Reja «{target_year.title}» yiliga nusxalandi.")
     return redirect("portal:curricula")
+
+
+# ==================== Dars jadvali ====================
+
+@role_required(Role.VICE_DEAN)
+def schedule_grid(request):
+    from academics.models import AcademicGroup
+    from schedule.models import Lesson, TimeSlot
+    from portal.forms import LessonForm, TimeSlotForm
+    faculty, ctx = _base(request)
+
+    years = AcademicYear.objects.filter(faculty=faculty)
+    year_id = request.GET.get("year") or (years.first().pk if years else None)
+    view_by = request.GET.get("by", "group")  # group | teacher | room
+    obj_id = request.GET.get("id")
+
+    groups = AcademicGroup.objects.filter(direction__faculty=faculty)
+    teachers = (get_user_model().objects.filter(roles__role=Role.TEACHER).distinct())
+    rooms = Room.objects.all()
+
+    lessons = (Lesson.objects.filter(academic_year_id=year_id, is_active=True)
+               .select_related("course", "teacher", "room", "timeslot")
+               .prefetch_related("groups"))
+    if view_by == "group" and obj_id:
+        lessons = lessons.filter(groups__id=obj_id)
+    elif view_by == "teacher" and obj_id:
+        lessons = lessons.filter(teacher_id=obj_id)
+    elif view_by == "room" and obj_id:
+        lessons = lessons.filter(room_id=obj_id)
+
+    slots = list(TimeSlot.objects.filter(is_active=True))
+    days = Lesson.WeekDay.choices
+    grid = {}  # (slot_id, day) -> [lessons]
+    for les in lessons.distinct():
+        grid.setdefault((les.timeslot_id, les.week_day), []).append(les)
+    rows = []
+    for slot in slots:
+        cells = []
+        for day_val, day_lbl in days:
+            cells.append({"day": day_val, "lessons": grid.get((slot.id, day_val), [])})
+        rows.append({"slot": slot, "cells": cells})
+
+    ctx.update({
+        "active": "schedule", "years": years, "year_id": int(year_id) if year_id else None,
+        "view_by": view_by, "obj_id": int(obj_id) if obj_id else None,
+        "groups": groups, "teachers": teachers, "rooms": rooms,
+        "days": days, "rows": rows, "has_slots": bool(slots),
+        "lesson_form": LessonForm(faculty=faculty, initial={"academic_year": year_id}),
+        "slot_form": TimeSlotForm(),
+    })
+    return render(request, "portal/vice_dean/schedule.html", ctx)
+
+
+@role_required(Role.VICE_DEAN)
+def lesson_create(request):
+    from portal.forms import LessonForm
+    faculty, _ = _base(request)
+    form = LessonForm(request.POST or None, faculty=faculty)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Dars jadvalga qo‘shildi.")
+    elif request.method == "POST":
+        err = form.errors.get("__all__")
+        messages.error(request, err[0] if err else "Ma‘lumot to‘liq emas.")
+    back = request.META.get("HTTP_REFERER", "portal:schedule")
+    return redirect(back)
+
+
+@role_required(Role.VICE_DEAN)
+def lesson_delete(request, pk):
+    from schedule.models import Lesson
+    faculty, _ = _base(request)
+    les = get_object_or_404(Lesson, pk=pk, academic_year__faculty=faculty)
+    les.delete()
+    messages.success(request, "Dars o‘chirildi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:schedule"))
+
+
+@role_required(Role.VICE_DEAN)
+def timeslot_add(request):
+    from portal.forms import TimeSlotForm
+    form = TimeSlotForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Juft qo‘shildi.")
+    elif request.method == "POST":
+        messages.error(request, "Juft raqami takrorlanmasligi kerak.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:schedule"))
+
+
+@role_required(Role.VICE_DEAN)
+def timeslot_delete(request, pk):
+    from schedule.models import TimeSlot
+    get_object_or_404(TimeSlot, pk=pk).delete()
+    messages.success(request, "Juft o‘chirildi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:schedule"))

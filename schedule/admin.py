@@ -18,3 +18,18 @@ class BuildingAdmin(admin.ModelAdmin):
 class RoomAdmin(admin.ModelAdmin):
     list_display = ("name", "building", "kind", "capacity", "floor", "is_active")
     list_filter = ("kind", "building", "is_active")
+
+
+from .models import Lesson, TimeSlot  # noqa: E402
+
+
+@admin.register(TimeSlot)
+class TimeSlotAdmin(admin.ModelAdmin):
+    list_display = ("order", "start_time", "end_time", "is_active")
+
+
+@admin.register(Lesson)
+class LessonAdmin(admin.ModelAdmin):
+    list_display = ("course", "teacher", "week_day", "timeslot", "week_type", "kind", "room")
+    list_filter = ("week_day", "week_type", "kind")
+    filter_horizontal = ("groups",)

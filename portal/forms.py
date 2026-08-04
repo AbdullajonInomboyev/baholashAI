@@ -236,3 +236,51 @@ class RoomForm(forms.ModelForm):
         fields = ["building", "name", "kind", "capacity", "floor", "is_active"]
         labels = {"building": "Bino", "name": "Xona raqami", "kind": "Turi",
                   "capacity": "Sig‘imi", "floor": "Qavat", "is_active": "Faol"}
+
+
+from schedule.models import Lesson, TimeSlot, check_conflicts  # noqa: E402
+
+
+class TimeSlotForm(forms.ModelForm):
+    class Meta:
+        model = TimeSlot
+        fields = ["order", "start_time", "end_time"]
+        labels = {"order": "Juft raqami", "start_time": "Boshlanishi", "end_time": "Tugashi"}
+        widgets = {"start_time": forms.TimeInput(attrs={"type": "time"}),
+                   "end_time": forms.TimeInput(attrs={"type": "time"})}
+
+
+class LessonForm(forms.ModelForm):
+    class Meta:
+        model = Lesson
+        fields = ["academic_year", "course", "teacher", "groups", "room",
+                  "timeslot", "week_day", "week_type", "kind"]
+        labels = {"academic_year": "O‘quv yili", "course": "Fan", "teacher": "O‘qituvchi",
+                  "groups": "Guruh(lar)", "room": "Auditoriya", "timeslot": "Juft",
+                  "week_day": "Kun", "week_type": "Hafta turi", "kind": "Dars turi"}
+        widgets = {"groups": forms.CheckboxSelectMultiple}
+
+    def __init__(self, *args, faculty=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["room"].required = False
+        if faculty is not None:
+            self.fields["academic_year"].queryset = AcademicYear.objects.filter(faculty=faculty)
+            self.fields["course"].queryset = Course.objects.filter(
+                curriculum__direction__faculty=faculty).select_related("curriculum__direction")
+            self.fields["teacher"].queryset = (
+                get_user_model().objects.filter(roles__role=Role.TEACHER).distinct())
+            self.fields["groups"].queryset = AcademicGroup.objects.filter(
+                direction__faculty=faculty)
+
+    def clean(self):
+        c = super().clean()
+        needed = ["academic_year", "timeslot", "week_day", "week_type", "teacher"]
+        if all(c.get(k) for k in needed):
+            group_ids = [g.id for g in c.get("groups", [])]
+            conflicts = check_conflicts(
+                c["academic_year"], c["timeslot"], c["week_day"], c["week_type"],
+                c["teacher"], c.get("room"), group_ids,
+                exclude_id=self.instance.pk if self.instance else None)
+            if conflicts:
+                raise forms.ValidationError("To‘qnashuv: " + "; ".join(conflicts))
+        return c

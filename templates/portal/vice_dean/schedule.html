@@ -1,0 +1,89 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/vice_dean/_nav.html' %}{% endblock %}
+{% block crumbs %}Dars jadvali{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Dars jadvali</h1></div>
+
+<div class="panel-card" style="padding:14px 16px">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <select name="year" onchange="this.form.submit()" style="padding:8px;border:1px solid var(--line);border-radius:8px">
+      {% for y in years %}<option value="{{ y.pk }}" {% if year_id == y.pk %}selected{% endif %}>{{ y.title }}</option>{% endfor %}
+    </select>
+    <select name="by" onchange="this.form.submit()" style="padding:8px;border:1px solid var(--line);border-radius:8px">
+      <option value="group" {% if view_by == 'group' %}selected{% endif %}>Guruh bo‘yicha</option>
+      <option value="teacher" {% if view_by == 'teacher' %}selected{% endif %}>O‘qituvchi bo‘yicha</option>
+      <option value="room" {% if view_by == 'room' %}selected{% endif %}>Auditoriya bo‘yicha</option>
+    </select>
+    <select name="id" onchange="this.form.submit()" style="padding:8px;border:1px solid var(--line);border-radius:8px;min-width:180px">
+      <option value="">— tanlang (barchasi) —</option>
+      {% if view_by == 'group' %}{% for g in groups %}<option value="{{ g.pk }}" {% if obj_id == g.pk %}selected{% endif %}>{{ g.name }}</option>{% endfor %}
+      {% elif view_by == 'teacher' %}{% for t in teachers %}<option value="{{ t.pk }}" {% if obj_id == t.pk %}selected{% endif %}>{{ t.full_name|default:t.username }}</option>{% endfor %}
+      {% else %}{% for r in rooms %}<option value="{{ r.pk }}" {% if obj_id == r.pk %}selected{% endif %}>{{ r }}</option>{% endfor %}{% endif %}
+    </select>
+  </form>
+</div>
+
+{% if has_slots %}
+<div style="overflow-x:auto">
+<table class="grid schedule-grid">
+  <thead><tr><th style="width:90px">Juft</th>{% for dv, dl in days %}<th>{{ dl }}</th>{% endfor %}</tr></thead>
+  <tbody>
+    {% for row in rows %}<tr>
+      <td class="slot"><b>{{ row.slot.order }}</b><div class="help">{{ row.slot.start_time|time:"H:i" }}–{{ row.slot.end_time|time:"H:i" }}</div></td>
+      {% for cell in row.cells %}<td class="cell">
+        {% for les in cell.lessons %}
+        <div class="lesson lt-{{ les.kind }}">
+          <div class="c">{{ les.course.code }} <span class="tag mut">{{ les.get_kind_display }}</span></div>
+          <div class="m">{{ les.teacher.full_name|default:les.teacher.username }}</div>
+          <div class="m">{% for g in les.groups.all %}{{ g.name }} {% endfor %}{% if les.room %}· {{ les.room.name }}{% endif %}</div>
+          {% if les.week_type != 'all' %}<span class="tag warn">{{ les.get_week_type_display }}</span>{% endif %}
+          <form class="inline-form" method="post" action="{% url 'portal:lesson_delete' les.pk %}" onsubmit="return confirm('O‘chirilsinmi?')">{% csrf_token %}<button class="x" type="submit">×</button></form>
+        </div>
+        {% endfor %}
+      </td>{% endfor %}
+    </tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}<div class="empty">Avval juftlar (vaqt oralig‘i) qo‘shing.</div>{% endif %}
+
+<div class="chart-row" style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px">
+  <div class="panel-card">
+    <h2>Dars qo‘shish</h2>
+    <form class="stack" method="post" action="{% url 'portal:lesson_create' %}">{% csrf_token %}
+      <div class="row"><div><label>Fan</label>{{ lesson_form.course }}</div><div><label>O‘qituvchi</label>{{ lesson_form.teacher }}</div></div>
+      <label>Guruh(lar)</label><div style="max-height:110px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px">{{ lesson_form.groups }}</div>
+      <div class="row"><div><label>Auditoriya</label>{{ lesson_form.room }}</div><div><label>Juft</label>{{ lesson_form.timeslot }}</div></div>
+      <div class="row"><div><label>Kun</label>{{ lesson_form.week_day }}</div><div><label>Hafta turi</label>{{ lesson_form.week_type }}</div><div><label>Dars turi</label>{{ lesson_form.kind }}</div></div>
+      {{ lesson_form.academic_year.as_hidden }}
+      <div style="margin-top:12px"><button class="btn" type="submit">Qo‘shish</button></div>
+      <div class="help">Saqlashda o‘qituvchi, auditoriya va guruh bandligi (to‘qnashuv) avtomatik tekshiriladi.</div>
+    </form>
+  </div>
+  <div class="panel-card">
+    <h2>Juftlar (vaqt oralig‘i)</h2>
+    <table class="grid"><tbody>
+      {% for row in rows %}<tr><td><b>{{ row.slot.order }}-juft</b></td><td>{{ row.slot.start_time|time:"H:i" }}–{{ row.slot.end_time|time:"H:i" }}</td>
+        <td><form class="inline-form" method="post" action="{% url 'portal:timeslot_delete' row.slot.pk %}">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td></tr>{% endfor %}
+    </tbody></table>
+    <form class="stack" method="post" action="{% url 'portal:timeslot_add' %}" style="margin-top:12px">{% csrf_token %}
+      <div class="row"><div><label>Juft raqami</label>{{ slot_form.order }}</div><div><label>Boshlanishi</label>{{ slot_form.start_time }}</div><div><label>Tugashi</label>{{ slot_form.end_time }}</div></div>
+      <div style="margin-top:10px"><button class="btn sm" type="submit">Juft qo‘shish</button></div>
+    </form>
+  </div>
+</div>
+
+<style>
+.schedule-grid{table-layout:fixed;min-width:820px}
+.schedule-grid th,.schedule-grid td{vertical-align:top;border:1px solid var(--line)}
+.schedule-grid td.slot{text-align:center;background:var(--surface-2)}
+.schedule-grid td.cell{padding:5px}
+.lesson{position:relative;background:#eef2fe;border-left:3px solid #3d5ee1;border-radius:6px;padding:6px 8px;margin-bottom:5px;font-size:12px}
+.lesson.lt-practice{background:#e7f7f0;border-left-color:#0fb981}
+.lesson.lt-lab{background:#fdf1de;border-left-color:#f4a52a}
+.lesson.lt-seminar{background:#eeeafd;border-left-color:#7b61ff}
+.lesson .c{font-weight:700}
+.lesson .m{color:#5b6472;font-size:11px}
+.lesson .x{position:absolute;top:3px;right:4px;background:none;border:none;color:#b02a37;cursor:pointer;font-size:15px;line-height:1}
+</style>
+{% endblock %}

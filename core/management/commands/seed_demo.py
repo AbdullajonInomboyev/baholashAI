@@ -224,6 +224,7 @@ class Command(BaseCommand):
         self._seed_notifications()
         self._seed_rooms()
         self._seed_program()
+        self._seed_schedule()
 
     def _seed_assignments(self, assignments):
         """Namunaviy topshiriq + topshirilgan ishlar (o'qituvchi baholashi uchun)."""
@@ -409,3 +410,43 @@ class Command(BaseCommand):
         if cur and not cur.is_approved:
             from django.utils import timezone as tz
             cur.is_approved = True; cur.approved_at = tz.now(); cur.save()
+
+
+    def _seed_schedule(self):
+        from datetime import time
+        from schedule.models import TimeSlot, Lesson, Room
+        from academics.models import Course, AcademicGroup, AcademicYear
+        slots_def = [(1, time(8,30), time(9,50)), (2, time(10,0), time(11,20)),
+                     (3, time(11,30), time(12,50)), (4, time(13,30), time(14,50)),
+                     (5, time(15,0), time(16,20)), (6, time(16,30), time(17,50))]
+        slots = []
+        for order, st, en in slots_def:
+            ts, _ = TimeSlot.objects.get_or_create(order=order, defaults={"start_time": st, "end_time": en})
+            slots.append(ts)
+        group = AcademicGroup.objects.first()
+        year = AcademicYear.objects.filter(is_active=True).first() or AcademicYear.objects.first()
+        rooms = list(Room.objects.all())
+        courses = list(Course.objects.all()[:4])
+        if not (group and year and courses and rooms):
+            return
+        if Lesson.objects.exists():
+            return
+        plan = [
+            (courses[0], Lesson.WeekDay.MON, slots[0], Lesson.Kind.LECTURE),
+            (courses[1], Lesson.WeekDay.MON, slots[1], Lesson.Kind.PRACTICE),
+            (courses[2 % len(courses)], Lesson.WeekDay.TUE, slots[0], Lesson.Kind.LAB),
+            (courses[3 % len(courses)], Lesson.WeekDay.WED, slots[1], Lesson.Kind.SEMINAR),
+        ]
+        for i, (course, day, slot, kind) in enumerate(plan):
+            teacher = None
+            ta = course.department_links.first() if hasattr(course, "department_links") else None
+            from teaching.models import TeacherAssignment
+            asg = TeacherAssignment.objects.filter(
+                department_course__course=course, status=TeacherAssignment.Status.ACTIVE).first()
+            teacher = asg.teacher if asg else group.curator
+            if not teacher:
+                continue
+            les = Lesson.objects.create(academic_year=year, course=course, teacher=teacher,
+                room=rooms[i % len(rooms)], timeslot=slot, week_day=day,
+                week_type=Lesson.WeekType.ALL, kind=kind)
+            les.groups.add(group)
