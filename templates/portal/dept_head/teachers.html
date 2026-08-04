@@ -1,0 +1,17 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}O‘qituvchilar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>O‘qituvchilar</h1></div>
+{% if teachers %}
+<table class="grid"><thead><tr><th>F.I.Sh.</th><th>Fanlar</th><th>Yuklama (soat)</th><th>Resurslar</th><th></th></tr></thead><tbody>
+  {% for t in teachers %}<tr>
+    <td><a href="{% url 'portal:dept_teacher_profile' t.teacher.pk %}"><b>{{ t.teacher.full_name|default:t.teacher.username }}</b></a></td>
+    <td>{{ t.courses }}</td>
+    <td><span class="tag {% if t.hours > 700 %}warn{% else %}ok{% endif %}">{{ t.hours }}</span></td>
+    <td>{{ t.resources }}</td>
+    <td><a class="btn ghost sm" href="{% url 'portal:dept_teacher_profile' t.teacher.pk %}">Profil</a></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Kafedraga biriktirilgan o‘qituvchi topilmadi. «Fanlar va o‘qituvchilar» dan biriktiring.</div>{% endif %}
+{% endblock %}

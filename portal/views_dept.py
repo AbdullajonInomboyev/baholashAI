@@ -204,3 +204,55 @@ def remark_resolve(request, pk):
         remark.save(update_fields=["status", "resolved_at"])
         messages.success(request, "Izoh hal qilingan deb belgilandi.")
     return redirect("portal:dept_remarks")
+
+
+# ==================== O'qituvchilar (kafedra mudiri) ====================
+
+@role_required(Role.DEPT_HEAD)
+def teachers(request):
+    departments, active_dept, ctx = _base(request)
+    if not active_dept:
+        return render(request, "portal/dept_head/teachers.html", ctx)
+    assignments = (TeacherAssignment.objects
+                   .filter(department_course__department=active_dept,
+                           status=TeacherAssignment.Status.ACTIVE)
+                   .select_related("teacher", "department_course__course"))
+    rows = {}
+    for a in assignments:
+        t = a.teacher
+        r = rows.setdefault(t.id, {"teacher": t, "courses": 0, "hours": 0, "resources": 0})
+        r["courses"] += 1
+        r["hours"] += a.department_course.course.total_hours or 0
+    # har bir o'qituvchining shu kafedradagi resurslari soni
+    for tid, r in rows.items():
+        r["resources"] = Resource.objects.filter(
+            uploaded_by_id=tid,
+            links__teacher_assignment__department_course__department=active_dept).distinct().count()
+    teachers = sorted(rows.values(), key=lambda x: (x["teacher"].full_name or x["teacher"].username))
+    ctx.update({"active": "teachers", "teachers": teachers})
+    return render(request, "portal/dept_head/teachers.html", ctx)
+
+
+@role_required(Role.DEPT_HEAD)
+def teacher_profile(request, pk):
+    from assessment.models import Assignment, TeacherReview
+    departments, active_dept, ctx = _base(request)
+    teacher = get_object_or_404(User, pk=pk)
+    assignments = (TeacherAssignment.objects
+                   .filter(teacher=teacher, department_course__department=active_dept,
+                           status=TeacherAssignment.Status.ACTIVE)
+                   .select_related("department_course__course"))
+    total_hours = sum(a.department_course.course.total_hours or 0 for a in assignments)
+    resources = (Resource.objects
+                 .filter(uploaded_by=teacher,
+                         links__teacher_assignment__department_course__department=active_dept)
+                 .distinct().select_related("review"))
+    # faollik: yaratgan topshiriqlar, baholagan ishlar, yuklagan resurslar
+    n_assignments = Assignment.objects.filter(
+        teacher_assignment__teacher=teacher,
+        teacher_assignment__department_course__department=active_dept).count()
+    n_graded = TeacherReview.objects.filter(teacher=teacher).count()
+    activity = {"assignments": n_assignments, "graded": n_graded, "resources": resources.count()}
+    ctx.update({"active": "teachers", "teacher_obj": teacher, "assignments": assignments,
+                "total_hours": total_hours, "resources": resources, "activity": activity})
+    return render(request, "portal/dept_head/teacher_profile.html", ctx)
