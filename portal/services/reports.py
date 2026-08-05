@@ -143,3 +143,40 @@ def faculty_report_pdf(faculty):
     elems.append(table)
     doc.build(elems)
     return buffer.getvalue()
+
+
+def department_report_pdf(department):
+    """Kafedra hisoboti — PDF (reportlab)."""
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=18 * mm, bottomMargin=14 * mm)
+    styles = getSampleStyleSheet()
+    elems = [Paragraph(f"Kafedra hisoboti — {department.name}", styles["Title"]), Spacer(1, 8)]
+    rows = [["Fan kodi", "Fan nomi", "O‘qituvchi(lar)", "Resurslar"]]
+    for link in department.course_links.select_related("course").order_by("course__code"):
+        assignments = (TeacherAssignment.objects
+                       .filter(department_course=link, status=TeacherAssignment.Status.ACTIVE)
+                       .select_related("teacher"))
+        teachers = ", ".join(a.teacher.full_name or a.teacher.username for a in assignments) or "—"
+        n_res = ResourceReview.objects.filter(
+            resource__links__teacher_assignment__department_course=link).count()
+        rows.append([link.course.code, link.course.name, teachers, str(n_res)])
+    if len(rows) == 1:
+        rows.append(["—", "Fan biriktirilmagan", "—", "0"])
+    t = Table(rows, repeatRows=1, hAlign="LEFT", colWidths=[60, 200, 160, 60])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3d5ee1")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#c9cede")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f4f6fa")]),
+        ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    elems.append(t)
+    doc.build(elems)
+    return buffer.getvalue()

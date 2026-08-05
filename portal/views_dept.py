@@ -442,3 +442,124 @@ def schedule_view(request):
                 "days": Lesson.WeekDay.choices,
                 "rows": rows})
     return render(request, "portal/dept_head/schedule.html", ctx)
+
+
+# ==================== Hisobotlar (mudir) ====================
+
+@role_required(Role.DEPT_HEAD)
+def reports(request):
+    departments, dept, ctx = _base(request)
+    stats = {}
+    if dept:
+        from academics.models import Direction
+        n_courses = DepartmentCourse.objects.filter(department=dept).count()
+        teacher_ids = (TeacherAssignment.objects
+                       .filter(department_course__department=dept,
+                               status=TeacherAssignment.Status.ACTIVE)
+                       .values_list("teacher_id", flat=True).distinct())
+        n_resources = Resource.objects.filter(
+            links__teacher_assignment__department_course__department=dept).distinct().count()
+        total_hours = sum(
+            (dc.course.total_hours or 0)
+            for dc in DepartmentCourse.objects.filter(department=dept).select_related("course"))
+        stats = {"courses": n_courses, "teachers": len(teacher_ids),
+                 "resources": n_resources, "directions": Direction.objects.filter(department=dept).count(),
+                 "hours": total_hours}
+    ctx.update({"active": "reports", "stats": stats})
+    return render(request, "portal/dept_head/reports.html", ctx)
+
+
+@role_required(Role.DEPT_HEAD)
+def report_excel(request):
+    from django.http import HttpResponse
+    from portal.services.reports import department_report
+    departments, dept, _ = _base(request)
+    data = department_report(dept)
+    resp = HttpResponse(data, content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resp["Content-Disposition"] = 'attachment; filename="kafedra_hisoboti.xlsx"'
+    return resp
+
+
+@role_required(Role.DEPT_HEAD)
+def report_pdf(request):
+    from django.http import HttpResponse
+    from portal.services.reports import department_report_pdf
+    departments, dept, _ = _base(request)
+    data = department_report_pdf(dept)
+    resp = HttpResponse(data, content_type="application/pdf")
+    resp["Content-Disposition"] = 'attachment; filename="kafedra_hisoboti.pdf"'
+    return resp
+
+
+# ==================== Xabarlar (mudir) ====================
+
+@role_required(Role.DEPT_HEAD)
+def messages_center(request):
+    from core.models import Message
+    departments, dept, ctx = _base(request)
+    tab = request.GET.get("tab", "incoming")
+    incoming = ReviewRemark.objects.none()
+    sent = Message.objects.none()
+    dept_teachers = []
+    if dept:
+        incoming = (ReviewRemark.objects.filter(department=dept)
+                    .select_related("author").order_by("-created_at"))
+        sent = (Message.objects.filter(sender=request.user)
+                .select_related("recipient").order_by("-created_at"))
+        teacher_ids = (TeacherAssignment.objects
+                       .filter(department_course__department=dept,
+                               status=TeacherAssignment.Status.ACTIVE)
+                       .values_list("teacher_id", flat=True).distinct())
+        dept_teachers = User.objects.filter(id__in=teacher_ids)
+    ctx.update({"active": "messages", "tab": tab, "incoming": incoming,
+                "sent": sent, "dept_teachers": dept_teachers})
+    return render(request, "portal/dept_head/messages.html", ctx)
+
+
+@role_required(Role.DEPT_HEAD)
+def message_send(request):
+    from core.models import Message
+    from core.notifications import notify
+    from django.urls import reverse
+    departments, dept, _ = _base(request)
+    recipient = get_object_or_404(User, pk=request.POST.get("recipient"))
+    body = (request.POST.get("body") or "").strip()
+    if body:
+        Message.objects.create(sender=request.user, recipient=recipient, body=body)
+        notify(recipient, f"Kafedra mudiridan xabar: {body[:60]}",
+               reverse("portal:dashboard"))
+        messages.success(request, "Xabar yuborildi.")
+    return redirect("/zamdekan/kafedra/xabarlar/?tab=sent")
+
+
+# ==================== Profil (mudir) ====================
+
+@role_required(Role.DEPT_HEAD)
+def profile(request):
+    departments, dept, ctx = _base(request)
+    user = request.user
+    pw_error = pw_ok = None
+    if request.method == "POST" and request.POST.get("form") == "info":
+        user.full_name = request.POST.get("full_name", "").strip()
+        user.phone = request.POST.get("phone", "").strip()
+        user.email = request.POST.get("email", "").strip()
+        user.save(update_fields=["full_name", "phone", "email"])
+        messages.success(request, "Ma‘lumotlar saqlandi.")
+        return redirect("portal:dept_profile")
+    if request.method == "POST" and request.POST.get("form") == "password":
+        old = request.POST.get("old_password", "")
+        new = request.POST.get("new_password", "")
+        new2 = request.POST.get("new_password2", "")
+        if not user.check_password(old):
+            messages.error(request, "Joriy parol noto‘g‘ri.")
+        elif len(new) < 6:
+            messages.error(request, "Yangi parol kamida 6 belgidan iborat bo‘lsin.")
+        elif new != new2:
+            messages.error(request, "Yangi parollar mos kelmadi.")
+        else:
+            user.set_password(new)
+            user.save()
+            messages.success(request, "Parol yangilandi. Qayta kiring.")
+            return redirect("accounts:logout")
+    ctx.update({"active": "profile", "user_obj": user})
+    return render(request, "portal/dept_head/profile.html", ctx)

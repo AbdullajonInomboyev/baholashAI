@@ -23,3 +23,11 @@ class AuditLogAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Notification)
+
+
+from .models import Message
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ("sender", "recipient", "created_at")
+    search_fields = ("body",)

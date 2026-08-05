@@ -18,6 +18,12 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Elektron resurslar</span></a>
 <a href="{% url 'portal:dept_schedule' %}" class="{% if active == 'schedule' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4M8 14h3M13 14h3"/></svg><span>Dars jadvali</span></a>
+<a href="{% url 'portal:dept_reports' %}" class="{% if active == 'reports' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Hisobotlar</span></a>
+<a href="{% url 'portal:dept_messages' %}" class="{% if active == 'messages' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Xabarlar</span></a>
+<a href="{% url 'portal:dept_profile' %}" class="{% if active == 'profile' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg><span>Profil</span></a>
 <a href="{% url 'portal:dept_resources' %}" class="{% if active == 'resources' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Resurs sifati (AI)</span></a>
 <a href="{% url 'portal:dept_remarks' %}" class="{% if active == 'remarks' %}active{% endif %}">

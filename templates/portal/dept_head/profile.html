@@ -1,0 +1,29 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}Profil{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Profil</h1></div>
+<div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="panel-card">
+    <h2>Shaxsiy ma‘lumotlar</h2>
+    <form class="stack" method="post">{% csrf_token %}<input type="hidden" name="form" value="info">
+      <label>F.I.Sh.</label><input type="text" name="full_name" value="{{ user_obj.full_name }}" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
+      <label style="margin-top:8px">Login</label><input type="text" value="{{ user_obj.username }}" disabled style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2)">
+      <label style="margin-top:8px">Email</label><input type="email" name="email" value="{{ user_obj.email }}" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
+      <label style="margin-top:8px">Telefon</label><input type="text" name="phone" value="{{ user_obj.phone }}" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
+      <div style="margin-top:12px"><button class="btn" type="submit">Saqlash</button></div>
+    </form>
+  </div>
+  <div class="panel-card">
+    <h2>Parolni almashtirish</h2>
+    <form class="stack" method="post">{% csrf_token %}<input type="hidden" name="form" value="password">
+      <label>Joriy parol</label><input type="password" name="old_password" required style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
+      <label style="margin-top:8px">Yangi parol</label><input type="password" name="new_password" required style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
+      <label style="margin-top:8px">Yangi parol (takror)</label><input type="password" name="new_password2" required style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px">
+      <div style="margin-top:12px"><button class="btn" type="submit">Parolni yangilash</button></div>
+    </form>
+    <hr style="margin:16px 0;border:none;border-top:1px solid var(--line)">
+    <a class="btn ghost" href="{% url 'accounts:logout' %}">Tizimdan chiqish</a>
+  </div>
+</div>
+{% endblock %}

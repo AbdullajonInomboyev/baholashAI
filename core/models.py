@@ -111,3 +111,23 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.user} · {self.message[:40]}"
+
+
+class Message(models.Model):
+    """Kafedra mudiri ↔ o'qituvchi xabarlari."""
+    sender = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="sent_messages",
+        verbose_name="Jo‘natuvchi")
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_messages",
+        verbose_name="Qabul qiluvchi")
+    body = models.TextField("Xabar")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Xabar"
+        verbose_name_plural = "Xabarlar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.sender} → {self.recipient}"

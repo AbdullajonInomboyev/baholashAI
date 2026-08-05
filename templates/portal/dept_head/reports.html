@@ -1,0 +1,24 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}Hisobotlar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Hisobotlar</h1><div class="spacer"></div>
+  <a class="btn ghost" href="{% url 'portal:dept_report_excel' %}">Excel</a>
+  <a class="btn ghost" href="{% url 'portal:dept_report_pdf' %}">PDF</a>
+</div>
+<div class="cards">
+  <div class="card"><div class="n">{{ stats.directions }}</div><div class="k">Yo‘nalish</div></div>
+  <div class="card"><div class="n">{{ stats.courses }}</div><div class="k">Fan</div></div>
+  <div class="card"><div class="n">{{ stats.teachers }}</div><div class="k">O‘qituvchi</div></div>
+  <div class="card"><div class="n">{{ stats.resources }}</div><div class="k">Resurs</div></div>
+  <div class="card"><div class="n">{{ stats.hours }}</div><div class="k">Umumiy yuklama (soat)</div></div>
+</div>
+<div class="panel-card" style="margin-top:16px">
+  <h2>Hisobot turlari</h2>
+  <p class="help">Kafedra kesimidagi to‘liq hisobotni yuklab oling: fanlar, o‘qituvchilar, resurslar va sifat ballari.</p>
+  <div style="display:flex;gap:10px;margin-top:10px">
+    <a class="btn" href="{% url 'portal:dept_report_excel' %}">Excel hisobot</a>
+    <a class="btn ghost" href="{% url 'portal:dept_report_pdf' %}">PDF hisobot</a>
+  </div>
+</div>
+{% endblock %}
