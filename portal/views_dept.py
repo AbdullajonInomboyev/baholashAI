@@ -318,3 +318,75 @@ def course_program(request, pk):
                 "quizzes": quizzes, "resource_links": resource_links,
                 "placements": course.placements.select_related("semester")})
     return render(request, "portal/dept_head/course_program.html", ctx)
+
+
+# ==================== Elektron resurslar workflow (mudir) ====================
+
+@role_required(Role.DEPT_HEAD)
+def resources_workflow(request):
+    departments, dept, ctx = _base(request)
+    qs = (Resource.objects.none())
+    counts = {}
+    if dept:
+        qs = (Resource.objects
+              .filter(links__teacher_assignment__department_course__department=dept)
+              .distinct().select_related("uploaded_by", "review")
+              .prefetch_related("links__teacher_assignment__department_course__course"))
+        status = request.GET.get("status", "new")
+        counts = {s: qs.filter(dept_status=s).count() for s, _ in Resource.DeptStatus.choices}
+        if status in dict(Resource.DeptStatus.choices):
+            qs = qs.filter(dept_status=status)
+        ctx["f_status"] = status
+    ctx.update({"active": "eresources", "resources": qs,
+                "statuses": Resource.DeptStatus.choices, "counts": counts})
+    return render(request, "portal/dept_head/resources_workflow.html", ctx)
+
+
+def _dept_res_action(request, pk, status, note_field="dept_note"):
+    from core.notifications import notify
+    from django.urls import reverse
+    departments, dept, _ = _base(request)
+    r = get_object_or_404(
+        Resource.objects.filter(
+            links__teacher_assignment__department_course__department=dept).distinct(), pk=pk)
+    r.dept_status = status
+    note = request.POST.get("note", "").strip()
+    if note:
+        r.dept_note = note
+    r.save(update_fields=["dept_status", "dept_note"])
+    return r, note
+
+
+@role_required(Role.DEPT_HEAD)
+def resource_dept_approve(request, pk):
+    _dept_res_action(request, pk, Resource.DeptStatus.APPROVED)
+    messages.success(request, "Resurs kafedra tomonidan tasdiqlandi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:dept_eresources"))
+
+
+@role_required(Role.DEPT_HEAD)
+def resource_dept_return(request, pk):
+    from core.notifications import notify
+    from django.urls import reverse
+    r, note = _dept_res_action(request, pk, Resource.DeptStatus.RETURNED)
+    notify(r.uploaded_by, f"«{r.title}» resursi tuzatishga qaytarildi"
+           + (f": {note}" if note else ""), reverse("portal:teacher_resources"))
+    messages.success(request, "Resurs o‘qituvchiga tuzatishga qaytarildi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:dept_eresources"))
+
+
+@role_required(Role.DEPT_HEAD)
+def resource_dept_forward(request, pk):
+    r, _ = _dept_res_action(request, pk, Resource.DeptStatus.FORWARDED)
+    # Zam dekan navbatiga tushishi uchun tasdiq holatini 'kutilmoqda' qilamiz
+    r.approval_status = Resource.ApprovalStatus.PENDING
+    r.save(update_fields=["approval_status"])
+    messages.success(request, "Resurs Zam dekanga yuborildi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:dept_eresources"))
+
+
+@role_required(Role.DEPT_HEAD)
+def resource_dept_archive(request, pk):
+    _dept_res_action(request, pk, Resource.DeptStatus.ARCHIVED)
+    messages.success(request, "Resurs arxivlandi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:dept_eresources"))
