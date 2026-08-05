@@ -1,0 +1,31 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}O‘quv rejalari{% endblock %}
+{% block content %}
+<div class="page-head"><h1>O‘quv rejalari</h1><div class="spacer"></div>
+  <form method="get"><select name="form" onchange="this.form.submit()" class="role-switch">
+    {% for v,l in study_forms %}<option value="{{ v }}" {% if study_form == v %}selected{% endif %}>{{ l }}</option>{% endfor %}
+  </select></form>
+</div>
+{% if tree %}
+  {% for ynode in tree %}
+  <div class="panel-card">
+    <h2>{{ ynode.year.title }}</h2>
+    {% for dn in ynode.dirs %}
+    <details open style="margin-bottom:8px">
+      <summary style="cursor:pointer;font-weight:600;padding:6px 0">{{ dn.dir.code }} — {{ dn.dir.name }}
+        <span class="tag mut">{{ dn.total }} fan</span> {% if dn.approved %}<span class="tag ok">Tasdiqlangan</span>{% else %}<span class="tag warn">Loyiha</span>{% endif %}</summary>
+      {% for s in dn.sems %}
+      <div style="margin:6px 0 6px 14px">
+        <div class="help" style="font-weight:600;margin-bottom:4px">{{ s.n }}-semestr</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          {% for c in s.courses %}<a class="chip" href="{% url 'portal:dept_course_program' c.pk %}">{{ c.code }} · {{ c.name }}{% if c.is_elective %} <span class="tag mut">tanlov</span>{% endif %}</a>{% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </details>
+    {% endfor %}
+  </div>
+  {% endfor %}
+{% else %}<div class="empty">Kafedraga biriktirilgan yo‘nalish/reja topilmadi. Yo‘nalishga mas‘ul kafedra Zam dekan tomonidan biriktiriladi.</div>{% endif %}
+{% endblock %}

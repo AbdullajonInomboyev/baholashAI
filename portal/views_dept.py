@@ -256,3 +256,65 @@ def teacher_profile(request, pk):
     ctx.update({"active": "teachers", "teacher_obj": teacher, "assignments": assignments,
                 "total_hours": total_hours, "resources": resources, "activity": activity})
     return render(request, "portal/dept_head/teacher_profile.html", ctx)
+
+
+# ==================== O'quv rejalari (mudir tree) ====================
+
+@role_required(Role.DEPT_HEAD)
+def curricula(request):
+    from academics.models import AcademicYear, Curriculum, Direction, StudyForm
+    departments, dept, ctx = _base(request)
+    tree = []
+    if dept:
+        directions = Direction.objects.filter(department=dept)
+        study_form = request.GET.get("form", StudyForm.FULL_TIME)
+        for y in AcademicYear.objects.filter(faculty=dept.faculty):
+            dir_nodes = []
+            for d in directions:
+                cur = Curriculum.objects.filter(direction=d, academic_year=y,
+                                                study_form=study_form).first()
+                if not cur:
+                    continue
+                base = Course.objects.filter(curriculum=cur)
+                sems = []
+                for n in range(1, 9):
+                    courses = list(base.filter(placements__semester__number=n).distinct())
+                    if courses:
+                        sems.append({"n": n, "courses": courses})
+                dir_nodes.append({"dir": d, "total": base.count(), "sems": sems,
+                                  "approved": cur.is_approved})
+            if dir_nodes:
+                tree.append({"year": y, "dirs": dir_nodes})
+        ctx["study_form"] = study_form
+        ctx["study_forms"] = StudyForm.choices
+    ctx.update({"active": "curricula", "tree": tree})
+    return render(request, "portal/dept_head/curricula.html", ctx)
+
+
+@role_required(Role.DEPT_HEAD)
+def course_program(request, pk):
+    from assessment.models import Quiz
+    departments, dept, ctx = _base(request)
+    course = get_object_or_404(
+        Course.objects.select_related("curriculum__direction", "curriculum__academic_year"),
+        pk=pk, curriculum__direction__department=dept)
+    dept_link = DepartmentCourse.objects.filter(department=dept, course=course).first()
+    teachers = []
+    if dept_link:
+        teachers = [ta.teacher for ta in dept_link.teacher_assignments.filter(
+            status=TeacherAssignment.Status.ACTIVE).select_related("teacher")]
+    quizzes = Quiz.objects.filter(
+        teacher_assignment__department_course__course=course).distinct()
+    resource_links = (Resource.objects.none())
+    from teaching.models import ResourceLink
+    resource_links = (ResourceLink.objects
+                      .filter(teacher_assignment__department_course__course=course)
+                      .select_related("resource", "topic").distinct())
+    ctx.update({"active": "curricula", "course": course, "dept_link": dept_link,
+                "teachers": teachers, "topics": course.topics.all(),
+                "literature": course.literature.all(),
+                "control_types": course.control_types.all(),
+                "control_total": sum(c.weight for c in course.control_types.all()),
+                "quizzes": quizzes, "resource_links": resource_links,
+                "placements": course.placements.select_related("semester")})
+    return render(request, "portal/dept_head/course_program.html", ctx)

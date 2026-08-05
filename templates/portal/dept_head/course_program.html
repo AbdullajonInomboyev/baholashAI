@@ -1,0 +1,50 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ course.code }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ course.code }} — {{ course.name }}</h1></div>
+
+<div class="panel-card"><h2>Fan ma‘lumotlari</h2>
+  <table class="grid"><tbody>
+    <tr><td>Yo‘nalish</td><td>{{ course.curriculum.direction.code }} — {{ course.curriculum.direction.name }}</td></tr>
+    <tr><td>O‘quv yili</td><td>{{ course.curriculum.academic_year.title }} · {{ course.curriculum.get_study_form_display }}</td></tr>
+    <tr><td>Umumiy soat</td><td>{{ course.total_hours }} (ma‘ruza {{ course.lecture_hours }}, amaliy {{ course.practice_hours }}, mustaqil {{ course.independent_hours }})</td></tr>
+    <tr><td>Semestr / kredit</td><td>{% for p in placements %}{{ p.semester.number }}-sem: {{ p.credits }} kredit{% if not forloop.last %}, {% endif %}{% endfor %}</td></tr>
+    <tr><td>Tanlov fani</td><td>{% if course.is_elective %}Ha{% else %}Yo‘q{% endif %}</td></tr>
+    <tr><td>O‘qituvchi(lar)</td><td>{% for t in teachers %}<span class="tag mut">{{ t.full_name|default:t.username }}</span> {% empty %}—{% endfor %}</td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel-card"><h2>Sillabus — mavzular</h2>
+  {% if topics %}<ol style="margin:0;padding-left:20px">{% for t in topics %}<li style="margin:3px 0">{{ t.title }}</li>{% endfor %}</ol>
+  {% else %}<div class="help">Mavzular kiritilmagan.</div>{% endif %}
+</div>
+
+<div class="panel-card"><h2>Adabiyotlar</h2>
+  {% if literature %}<table class="grid"><thead><tr><th>Turi</th><th>Nomi</th><th>Muallif</th><th>Yil</th></tr></thead><tbody>
+    {% for l in literature %}<tr><td><span class="tag mut">{{ l.get_kind_display }}</span></td><td>{{ l.title }}</td><td>{{ l.author|default:"—" }}</td><td>{{ l.year|default:"—" }}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Adabiyot kiritilmagan.</div>{% endif %}
+</div>
+
+<div class="panel-card"><h2>Nazorat turlari va baholash mezoni</h2>
+  {% if control_types %}<table class="grid"><thead><tr><th>Nazorat turi</th><th>Vazn (%)</th></tr></thead><tbody>
+    {% for c in control_types %}<tr><td>{{ c.name }}</td><td>{{ c.weight }}%</td></tr>{% endfor %}
+    <tr><td><b>Jami</b></td><td><b>{{ control_total }}%</b></td></tr>
+  </tbody></table>{% else %}<div class="help">Nazorat turi kiritilmagan.</div>{% endif %}
+</div>
+
+<div class="panel-card"><h2>Testlar</h2>
+  {% if quizzes %}<table class="grid"><thead><tr><th>Test</th><th>Savollar</th><th>Holat</th></tr></thead><tbody>
+    {% for q in quizzes %}<tr><td>{{ q.title }}</td><td>{{ q.question_count }}</td><td>{% if q.is_open %}<span class="tag ok">Ochiq</span>{% else %}<span class="tag mut">Yopiq</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Test yaratilmagan.</div>{% endif %}
+</div>
+
+<div class="panel-card"><h2>Elektron resurslar</h2>
+  {% if resource_links %}<table class="grid"><thead><tr><th>Material</th><th>Ko‘rinishi</th><th>Mavzu</th><th>Tasdiq</th></tr></thead><tbody>
+    {% for l in resource_links %}<tr><td>{{ l.resource.title }}</td><td><span class="tag mut">{{ l.resource.get_resource_format_display }}</span></td>
+      <td>{% if l.topic %}{{ l.topic.title }}{% else %}—{% endif %}</td>
+      <td>{% if l.resource.approval_status == 'approved' %}<span class="tag ok">Tasdiqlangan</span>{% elif l.resource.approval_status == 'rejected' %}<span class="tag bad">Rad</span>{% else %}<span class="tag warn">Kutilmoqda</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Resurs biriktirilmagan.</div>{% endif %}
+</div>
+<a class="btn ghost" href="{% url 'portal:dept_curricula' %}">← O‘quv rejalari</a>
+{% endblock %}
