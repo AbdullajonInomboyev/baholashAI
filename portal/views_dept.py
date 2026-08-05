@@ -390,3 +390,55 @@ def resource_dept_archive(request, pk):
     _dept_res_action(request, pk, Resource.DeptStatus.ARCHIVED)
     messages.success(request, "Resurs arxivlandi.")
     return redirect(request.META.get("HTTP_REFERER", "portal:dept_eresources"))
+
+
+# ==================== Dars jadvali (mudir ko'rinishi, faqat o'qish) ====================
+
+@role_required(Role.DEPT_HEAD)
+def schedule_view(request):
+    from academics.models import AcademicGroup, AcademicYear
+    from schedule.models import Lesson, TimeSlot, Room
+    departments, dept, ctx = _base(request)
+    rows, groups, teachers, rooms, years = [], [], [], [], []
+    year_id = obj_id = None
+    view_by = request.GET.get("by", "group")
+    if dept:
+        years = list(AcademicYear.objects.filter(faculty=dept.faculty))
+        year_id = request.GET.get("year") or (years[0].pk if years else None)
+        groups = AcademicGroup.objects.filter(direction__department=dept)
+        teacher_ids = (TeacherAssignment.objects
+                       .filter(department_course__department=dept,
+                               status=TeacherAssignment.Status.ACTIVE)
+                       .values_list("teacher_id", flat=True).distinct())
+        teachers = User.objects.filter(id__in=teacher_ids)
+        rooms = Room.objects.all()
+        obj_id = request.GET.get("id")
+
+        lessons = (Lesson.objects.filter(academic_year_id=year_id, is_active=True)
+                   .select_related("course", "teacher", "room", "timeslot")
+                   .prefetch_related("groups"))
+        if view_by == "group" and obj_id:
+            lessons = lessons.filter(groups__id=obj_id)
+        elif view_by == "teacher" and obj_id:
+            lessons = lessons.filter(teacher_id=obj_id)
+        elif view_by == "room" and obj_id:
+            lessons = lessons.filter(room_id=obj_id)
+        else:
+            # standart: kafedra guruhlari bo'yicha
+            lessons = lessons.filter(groups__in=groups)
+
+        slots = list(TimeSlot.objects.filter(is_active=True))
+        grid = {}
+        for les in lessons.distinct():
+            grid.setdefault((les.timeslot_id, les.week_day), []).append(les)
+        for slot in slots:
+            cells = [{"day": dv, "lessons": grid.get((slot.id, dv), [])}
+                     for dv, dl in Lesson.WeekDay.choices]
+            rows.append({"slot": slot, "cells": cells})
+    ctx.update({"active": "schedule", "years": years,
+                "year_id": int(year_id) if year_id else None,
+                "view_by": view_by, "obj_id": int(obj_id) if obj_id else None,
+                "groups": groups, "teachers": teachers, "rooms": rooms,
+                "days": Lesson.WeekDay.choices,
+                "rows": rows})
+    return render(request, "portal/dept_head/schedule.html", ctx)

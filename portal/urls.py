@@ -104,6 +104,7 @@ urlpatterns = [
     path("kafedra/oqituvchilar/", views_dept.teachers, name="dept_teachers"),
     path("kafedra/oquv-rejalari/", views_dept.curricula, name="dept_curricula"),
     path("kafedra/elektron-resurslar/", views_dept.resources_workflow, name="dept_eresources"),
+    path("kafedra/dars-jadvali/", views_dept.schedule_view, name="dept_schedule"),
     path("kafedra/resurs/<int:pk>/tasdiqlash/", views_dept.resource_dept_approve, name="dept_res_approve"),
     path("kafedra/resurs/<int:pk>/qaytarish/", views_dept.resource_dept_return, name="dept_res_return"),
     path("kafedra/resurs/<int:pk>/yuborish/", views_dept.resource_dept_forward, name="dept_res_forward"),

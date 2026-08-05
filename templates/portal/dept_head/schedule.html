@@ -1,0 +1,59 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/dept_head/_nav.html' %}{% endblock %}
+{% block crumbs %}Dars jadvali{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Dars jadvali</h1></div>
+<div class="panel-card" style="padding:14px 16px">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <select name="year" onchange="this.form.submit()" class="role-switch">
+      {% for y in years %}<option value="{{ y.pk }}" {% if year_id == y.pk %}selected{% endif %}>{{ y.title }}</option>{% endfor %}
+    </select>
+    <select name="by" onchange="this.form.submit()" class="role-switch">
+      <option value="group" {% if view_by == 'group' %}selected{% endif %}>Guruh bo‘yicha</option>
+      <option value="teacher" {% if view_by == 'teacher' %}selected{% endif %}>O‘qituvchi bo‘yicha</option>
+      <option value="room" {% if view_by == 'room' %}selected{% endif %}>Auditoriya bo‘yicha</option>
+    </select>
+    <select name="id" onchange="this.form.submit()" class="role-switch" style="min-width:180px">
+      <option value="">— barchasi —</option>
+      {% if view_by == 'group' %}{% for g in groups %}<option value="{{ g.pk }}" {% if obj_id == g.pk %}selected{% endif %}>{{ g.name }}</option>{% endfor %}
+      {% elif view_by == 'teacher' %}{% for t in teachers %}<option value="{{ t.pk }}" {% if obj_id == t.pk %}selected{% endif %}>{{ t.full_name|default:t.username }}</option>{% endfor %}
+      {% else %}{% for r in rooms %}<option value="{{ r.pk }}" {% if obj_id == r.pk %}selected{% endif %}>{{ r }}</option>{% endfor %}{% endif %}
+    </select>
+  </form>
+</div>
+{% if rows %}
+<div style="overflow-x:auto">
+<table class="grid schedule-grid">
+  <thead><tr><th style="width:90px">Juft</th>{% for dv, dl in days %}<th>{{ dl }}</th>{% endfor %}</tr></thead>
+  <tbody>
+    {% for row in rows %}<tr>
+      <td class="slot"><b>{{ row.slot.order }}</b><div class="help">{{ row.slot.start_time|time:"H:i" }}–{{ row.slot.end_time|time:"H:i" }}</div></td>
+      {% for cell in row.cells %}<td class="cell">
+        {% for les in cell.lessons %}
+        <div class="lesson lt-{{ les.kind }}">
+          <div class="c">{{ les.course.code }} <span class="tag mut">{{ les.get_kind_display }}</span></div>
+          <div class="m">{{ les.teacher.full_name|default:les.teacher.username }}</div>
+          <div class="m">{% for g in les.groups.all %}{{ g.name }} {% endfor %}{% if les.room %}· {{ les.room.name }}{% endif %}</div>
+          {% if les.week_type != 'all' %}<span class="tag warn">{{ les.get_week_type_display }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </td>{% endfor %}
+    </tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="help" style="margin-top:10px">Dars jadvali Zam dekan tomonidan tuziladi. Bu yerda kafedra guruhlari va o‘qituvchilari jadvali ko‘rsatilgan.</div>
+{% else %}<div class="empty">Jadval topilmadi yoki juftlar hali kiritilmagan.</div>{% endif %}
+
+<style>
+.schedule-grid{table-layout:fixed;min-width:820px}
+.schedule-grid th,.schedule-grid td{vertical-align:top;border:1px solid var(--line)}
+.schedule-grid td.slot{text-align:center;background:var(--surface-2)}
+.schedule-grid td.cell{padding:5px}
+.lesson{background:#eef2fe;border-left:3px solid #3d5ee1;border-radius:6px;padding:6px 8px;margin-bottom:5px;font-size:12px}
+.lesson.lt-practice{background:#e7f7f0;border-left-color:#0fb981}
+.lesson.lt-lab{background:#fdf1de;border-left-color:#f4a52a}
+.lesson.lt-seminar{background:#eeeafd;border-left-color:#7b61ff}
+.lesson .c{font-weight:700}.lesson .m{color:#5b6472;font-size:11px}
+</style>
+{% endblock %}
