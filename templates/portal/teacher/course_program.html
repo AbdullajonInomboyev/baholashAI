@@ -1,0 +1,68 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ course.code }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ course.code }} — {{ course.name }}</h1></div>
+
+<div class="panel-card"><h2>Fan ma‘lumotlari</h2>
+  <table class="grid"><tbody>
+    <tr><td>Yo‘nalish</td><td>{{ course.curriculum.direction.code }} — {{ course.curriculum.direction.name }}</td></tr>
+    <tr><td>O‘quv yili</td><td>{{ course.curriculum.academic_year.title }} · {{ course.curriculum.get_study_form_display }}</td></tr>
+    <tr><td>Kredit / soatlar</td><td>{% for p in placements %}{{ p.semester.number }}-sem: {{ p.credits }} kredit{% if not forloop.last %}, {% endif %}{% endfor %} · Jami {{ course.total_hours }} soat (ma‘ruza {{ course.lecture_hours }}, amaliy {{ course.practice_hours }}, mustaqil {{ course.independent_hours }})</td></tr>
+    <tr><td>Guruhlar</td><td>{% for g in groups %}<span class="tag mut">{{ g.name }}</span> {% empty %}—{% endfor %}</td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel-card"><h2>Sillabus</h2>
+  <form class="stack" method="post" action="{% url 'portal:teacher_syllabus_save' course.pk %}">{% csrf_token %}
+    <label>Fan haqida</label><textarea name="about" rows="2" class="ta">{{ syllabus.about }}</textarea>
+    <label style="margin-top:8px">Fan maqsadi</label><textarea name="objective" rows="2" class="ta">{{ syllabus.objective }}</textarea>
+    <label style="margin-top:8px">Fan vazifalari</label><textarea name="tasks" rows="2" class="ta">{{ syllabus.tasks }}</textarea>
+    <label style="margin-top:8px">O‘quv natijalari</label><textarea name="outcomes" rows="2" class="ta">{{ syllabus.outcomes }}</textarea>
+    <label style="margin-top:8px">Baholash mezoni (izoh)</label><textarea name="grading" rows="2" class="ta">{{ syllabus.grading }}</textarea>
+    <div style="margin-top:12px"><button class="btn" type="submit">Sillabusni saqlash</button></div>
+  </form>
+</div>
+
+<div class="panel-card"><h2>Mavzular</h2>
+  {% if topics %}<ol style="margin:0 0 12px;padding-left:20px">{% for t in topics %}<li style="margin:4px 0">{{ t.title }}
+    <form class="inline-form" method="post" action="{% url 'portal:teacher_topic_delete' course.pk t.pk %}"><span></span>{% csrf_token %}<button class="btn ghost sm" type="submit">×</button></form></li>{% endfor %}</ol>
+  {% else %}<div class="help">Mavzu kiritilmagan.</div>{% endif %}
+  <form class="stack" method="post" action="{% url 'portal:teacher_topic_add' course.pk %}" style="margin-top:8px">{% csrf_token %}
+    <div class="row"><div style="max-width:100px"><label>Tartib</label><input type="number" name="order" class="inp"></div>
+      <div><label>Mavzu</label><input type="text" name="title" class="inp" required></div></div>
+    <div style="margin-top:10px"><button class="btn sm" type="submit">Mavzu qo‘shish</button></div>
+  </form>
+</div>
+
+<div class="panel-card"><h2>Adabiyotlar</h2>
+  {% if literature %}<table class="grid"><thead><tr><th>Turi</th><th>Nomi</th><th>Muallif</th><th>Yil</th><th></th></tr></thead><tbody>
+    {% for l in literature %}<tr><td><span class="tag mut">{{ l.get_kind_display }}</span></td><td>{{ l.title }}</td><td>{{ l.author|default:"—" }}</td><td>{{ l.year|default:"—" }}</td>
+      <td><form class="inline-form" method="post" action="{% url 'portal:teacher_literature_delete' course.pk l.pk %}">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Adabiyot kiritilmagan.</div>{% endif %}
+  <form class="stack" method="post" action="{% url 'portal:teacher_literature_add' course.pk %}" style="margin-top:12px">{% csrf_token %}
+    <div class="row"><div><label>Nomi</label><input type="text" name="title" class="inp" required></div>
+      <div style="max-width:160px"><label>Muallif</label><input type="text" name="author" class="inp"></div>
+      <div style="max-width:80px"><label>Yil</label><input type="text" name="year" class="inp"></div>
+      <div style="max-width:130px"><label>Turi</label><select name="kind" class="inp"><option value="main">Asosiy</option><option value="additional">Qo‘shimcha</option></select></div></div>
+    <div style="margin-top:10px"><button class="btn sm" type="submit">Adabiyot qo‘shish</button></div>
+  </form>
+</div>
+
+<div class="panel-card"><h2>Nazorat / baholash mezoni</h2>
+  {% if control_types %}<table class="grid"><thead><tr><th>Nazorat turi</th><th>Vazn (%)</th></tr></thead><tbody>
+    {% for c in control_types %}<tr><td>{{ c.name }}</td><td>{{ c.weight }}%</td></tr>{% endfor %}
+    <tr><td><b>Jami</b></td><td><b>{{ control_total }}%</b></td></tr></tbody></table>
+  {% else %}<div class="help">Nazorat turlari kafedra/zamdekan tomonidan belgilanadi.</div>{% endif %}
+</div>
+
+<div class="panel-card"><h2>Elektron resurslar</h2>
+  {% if resource_links %}<table class="grid"><thead><tr><th>Material</th><th>Ko‘rinishi</th><th>Mavzu</th><th>Tasdiq</th></tr></thead><tbody>
+    {% for l in resource_links %}<tr><td>{{ l.resource.title }}</td><td><span class="tag mut">{{ l.resource.get_resource_format_display }}</span></td>
+      <td>{% if l.topic %}{{ l.topic.title }}{% else %}—{% endif %}</td>
+      <td>{% if l.resource.approval_status == 'approved' %}<span class="tag ok">Tasdiqlangan</span>{% elif l.resource.approval_status == 'rejected' %}<span class="tag bad">Rad</span>{% else %}<span class="tag warn">Kutilmoqda</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Resurs biriktirilmagan. «Resurslar» bo‘limidan yuklang.</div>{% endif %}
+</div>
+<a class="btn ghost" href="{% url 'portal:teacher_my_courses' %}">← Mening fanlarim</a>
+<style>.ta,.inp{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:14px}</style>
+{% endblock %}

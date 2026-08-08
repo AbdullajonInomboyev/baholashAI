@@ -123,6 +123,13 @@ urlpatterns = [
 
     # ---- O'qituvchi ----
     path("oqituvchi/", views_teacher.dashboard, name="teacher_dashboard"),
+    path("oqituvchi/fanlarim/", views_teacher.my_courses, name="teacher_my_courses"),
+    path("oqituvchi/fanlarim/<int:pk>/", views_teacher.course_program, name="teacher_course_program"),
+    path("oqituvchi/fanlarim/<int:pk>/sillabus/", views_teacher.syllabus_save, name="teacher_syllabus_save"),
+    path("oqituvchi/fanlarim/<int:pk>/mavzu/qoshish/", views_teacher.topic_add, name="teacher_topic_add"),
+    path("oqituvchi/fanlarim/<int:pk>/mavzu/<int:topic_pk>/ochirish/", views_teacher.topic_delete, name="teacher_topic_delete"),
+    path("oqituvchi/fanlarim/<int:pk>/adabiyot/qoshish/", views_teacher.literature_add, name="teacher_literature_add"),
+    path("oqituvchi/fanlarim/<int:pk>/adabiyot/<int:lit_pk>/ochirish/", views_teacher.literature_delete, name="teacher_literature_delete"),
     path("oqituvchi/fanlar/", views_teacher.courses, name="teacher_courses"),
     path("oqituvchi/fanlar/<int:pk>/topshiriqlar/", views_teacher.course_assignments, name="teacher_course_assignments"),
     path("oqituvchi/fanlar/<int:pk>/topshiriq/yangi/", views_teacher.assignment_form, name="teacher_assignment_create"),

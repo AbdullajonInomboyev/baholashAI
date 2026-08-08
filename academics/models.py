@@ -373,3 +373,22 @@ class ControlType(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.weight}%)"
+
+
+class CourseSyllabus(models.Model):
+    """Fan sillabusi — matnli qismlar (mavzular/adabiyotlar alohida modellarda)."""
+    course = models.OneToOneField(Course, on_delete=models.CASCADE, related_name="syllabus",
+                                  verbose_name="Fan")
+    about = models.TextField("Fan haqida", blank=True)
+    objective = models.TextField("Fan maqsadi", blank=True)
+    tasks = models.TextField("Fan vazifalari", blank=True)
+    outcomes = models.TextField("O‘quv natijalari", blank=True)
+    grading = models.TextField("Baholash mezoni (izoh)", blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Sillabus"
+        verbose_name_plural = "Sillabuslar"
+
+    def __str__(self):
+        return f"Sillabus — {self.course.code}"

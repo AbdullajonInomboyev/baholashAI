@@ -356,3 +356,127 @@ def _course_students(ta):
     cur = ta.department_course.course.curriculum
     return User.objects.filter(enrollments__direction=cur.direction,
                                enrollments__study_form=cur.study_form).distinct()
+
+
+# ==================== Mening fanlarim (tree) + Fan dasturlari ====================
+
+def _my_courses_qs(user):
+    from academics.models import Course
+    ta_ids = _my_assignments(user).values_list("department_course__course_id", flat=True)
+    return Course.objects.filter(id__in=ta_ids).select_related(
+        "curriculum__direction", "curriculum__academic_year")
+
+
+def _get_my_course(user, pk):
+    from academics.models import Course
+    return get_object_or_404(_my_courses_qs(user), pk=pk)
+
+
+@role_required(Role.TEACHER)
+def my_courses(request):
+    from academics.models import AcademicYear
+    ctx = _base(request)
+    courses = list(_my_courses_qs(request.user))
+    # yil -> semestr -> fan
+    years = {}
+    for c in courses:
+        y = c.curriculum.academic_year
+        ynode = years.setdefault(y.id, {"year": y, "sems": {}})
+        for pl in c.placements.select_related("semester"):
+            n = pl.semester.number
+            ynode["sems"].setdefault(n, []).append(c)
+        if not c.placements.exists():
+            ynode["sems"].setdefault(0, []).append(c)
+    tree = []
+    for ynode in sorted(years.values(), key=lambda x: x["year"].title, reverse=True):
+        sems = [{"n": n, "courses": cs} for n, cs in sorted(ynode["sems"].items())]
+        tree.append({"year": ynode["year"], "sems": sems})
+    ctx.update({"active": "mycourses", "tree": tree, "n_courses": len(courses)})
+    return render(request, "portal/teacher/my_courses.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def course_program(request, pk):
+    from academics.models import AcademicGroup, CourseSyllabus
+    course = _get_my_course(request.user, pk)
+    syllabus, _ = CourseSyllabus.objects.get_or_create(course=course)
+    groups = AcademicGroup.objects.filter(direction=course.curriculum.direction)
+    resource_links = (ResourceLink.objects
+                      .filter(teacher_assignment__teacher=request.user,
+                              teacher_assignment__department_course__course=course)
+                      .select_related("resource", "topic").distinct())
+    ctx = _base(request)
+    ctx.update({"active": "mycourses", "course": course, "syllabus": syllabus,
+                "groups": groups, "topics": course.topics.all(),
+                "literature": course.literature.all(),
+                "control_types": course.control_types.all(),
+                "control_total": sum(c.weight for c in course.control_types.all()),
+                "resource_links": resource_links,
+                "placements": course.placements.select_related("semester")})
+    return render(request, "portal/teacher/course_program.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def syllabus_save(request, pk):
+    from academics.models import CourseSyllabus
+    course = _get_my_course(request.user, pk)
+    syl, _ = CourseSyllabus.objects.get_or_create(course=course)
+    for f in ["about", "objective", "tasks", "outcomes", "grading"]:
+        setattr(syl, f, request.POST.get(f, "").strip())
+    syl.save()
+    messages.success(request, "Sillabus saqlandi.")
+    return redirect("portal:teacher_course_program", pk=pk)
+
+
+@role_required(Role.TEACHER)
+def topic_add(request, pk):
+    from academics.models import SyllabusTopic
+    course = _get_my_course(request.user, pk)
+    title = (request.POST.get("title") or "").strip()
+    if title:
+        from django.db.models import Max
+        want = request.POST.get("order")
+        taken = set(course.topics.values_list("order", flat=True))
+        try:
+            order = int(want)
+        except (TypeError, ValueError):
+            order = None
+        if not order or order in taken:
+            mx = course.topics.aggregate(m=Max("order"))["m"] or 0
+            order = mx + 1
+        SyllabusTopic.objects.create(course=course, title=title, order=order)
+        messages.success(request, "Mavzu qo‘shildi.")
+    return redirect("portal:teacher_course_program", pk=pk)
+
+
+@role_required(Role.TEACHER)
+def topic_delete(request, pk, topic_pk):
+    from academics.models import SyllabusTopic
+    course = _get_my_course(request.user, pk)
+    get_object_or_404(SyllabusTopic, pk=topic_pk, course=course).delete()
+    messages.success(request, "Mavzu o‘chirildi.")
+    return redirect("portal:teacher_course_program", pk=pk)
+
+
+@role_required(Role.TEACHER)
+def literature_add(request, pk):
+    from academics.models import CourseLiterature
+    course = _get_my_course(request.user, pk)
+    title = (request.POST.get("title") or "").strip()
+    if title:
+        CourseLiterature.objects.create(
+            course=course, title=title, author=request.POST.get("author", "").strip(),
+            year=request.POST.get("year", "").strip(),
+            kind=request.POST.get("kind", CourseLiterature.Kind.MAIN),
+            order=course.literature.count() + 1)
+        messages.success(request, "Adabiyot qo‘shildi.")
+    return redirect("portal:teacher_course_program", pk=pk)
+
+
+@role_required(Role.TEACHER)
+def literature_delete(request, pk, lit_pk):
+    from academics.models import CourseLiterature
+    course = _get_my_course(request.user, pk)
+    get_object_or_404(CourseLiterature, pk=lit_pk, course=course).delete()
+    messages.success(request, "Adabiyot o‘chirildi.")
+    return redirect("portal:teacher_course_program", pk=pk)

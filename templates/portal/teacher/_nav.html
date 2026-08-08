@@ -1,6 +1,8 @@
 <div class="group">O‘qituvchi</div>
 <a href="{% url 'portal:teacher_dashboard' %}" class="{% if active == 'dashboard' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>Boshqaruv paneli</span></a>
+<a href="{% url 'portal:teacher_my_courses' %}" class="{% if active == 'mycourses' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11a2 2 0 0 1 2 2v14a1 1 0 0 0-1-1H4z"/><path d="M9 8h6M9 12h4"/></svg><span>Mening fanlarim</span></a>
 <a href="{% url 'portal:teacher_courses' %}" class="{% if active == 'courses' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h11a2 2 0 0 1 2 2v14a1 1 0 0 0-1-1H4z"/><path d="M20 6v14a1 1 0 0 0-1-1H8"/></svg><span>Fanlarim va topshiriqlar</span></a>
 <a href="{% url 'portal:teacher_resources' %}" class="{% if active == 'resources' %}active{% endif %}">

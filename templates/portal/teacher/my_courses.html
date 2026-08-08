@@ -1,0 +1,21 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Mening fanlarim{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Mening fanlarim</h1><div class="spacer"></div><span class="help">{{ n_courses }} ta biriktirilgan fan</span></div>
+{% if tree %}
+  {% for ynode in tree %}
+  <div class="panel-card">
+    <h2>{{ ynode.year.title }}</h2>
+    {% for s in ynode.sems %}
+    <div style="margin:8px 0">
+      <div class="help" style="font-weight:600;margin-bottom:5px">{% if s.n %}{{ s.n }}-semestr{% else %}Semestr belgilanmagan{% endif %}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        {% for c in s.courses %}<a class="chip" href="{% url 'portal:teacher_course_program' c.pk %}">{{ c.code }} · {{ c.name }}</a>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+{% else %}<div class="empty">Sizga hali fan biriktirilmagan. Kafedra mudiri fan biriktirgach, shu yerda ko‘rinadi.</div>{% endif %}
+{% endblock %}
