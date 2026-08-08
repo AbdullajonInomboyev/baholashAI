@@ -69,8 +69,13 @@ class Resource(models.Model):
         SYLLABUS = "syllabus", "Fan dasturi"
         LECTURE = "lecture", "Ma‘ruza"
         PRACTICE = "practice", "Amaliy material"
-        LITERATURE = "literature", "Adabiyot"
+        LAB = "lab", "Laboratoriya"
+        INDEPENDENT = "independent", "Mustaqil ta‘lim"
+        PRESENTATION = "presentation", "Taqdimot"
         VIDEO = "video", "Video"
+        TEST = "test", "Test"
+        CONTROL_Q = "control_q", "Nazorat savollari"
+        LITERATURE = "literature", "Adabiyot"
         OTHER = "other", "Boshqa"
 
     class Format(models.TextChoices):

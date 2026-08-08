@@ -151,9 +151,15 @@ def review_override(request, submission_pk):
 @role_required(Role.TEACHER)
 def resources(request):
     ctx = _base(request)
-    ctx.update({"active": "resources",
-                "resources": Resource.objects.filter(uploaded_by=request.user)
-                .select_related("review").prefetch_related("links__teacher_assignment__department_course__course"),
+    qs = (Resource.objects.filter(uploaded_by=request.user)
+          .select_related("review")
+          .prefetch_related("links__teacher_assignment__department_course__course"))
+    kind = request.GET.get("kind")
+    counts = {k: qs.filter(kind=k).count() for k, _ in Resource.Kind.choices}
+    if kind and kind in dict(Resource.Kind.choices):
+        qs = qs.filter(kind=kind)
+    ctx.update({"active": "resources", "resources": qs, "f_kind": kind,
+                "kinds": Resource.Kind.choices, "counts": counts, "total": Resource.objects.filter(uploaded_by=request.user).count(),
                 "form": ResourceUploadForm(teacher_assignments=_my_assignments(request.user))})
     return render(request, "portal/teacher/resources.html", ctx)
 

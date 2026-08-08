@@ -21,6 +21,12 @@
     <div class="help">«Ko‘rinishi» bo‘yicha faqat kerakli maydonni to‘ldiring (fayl / havola / matn). AI resursni mavzuga moslik va to‘liqlik bo‘yicha tahlil qiladi.</div>
   </form>
 </div>
+
+<h2 style="margin:6px 0 10px">Mening resurslarim</h2>
+<div class="filters" style="margin-bottom:14px">
+  <a class="chip {% if not f_kind %}active{% endif %}" href="?">Barchasi ({{ total }})</a>
+  {% for val, label in kinds %}<a class="chip {% if f_kind == val %}active{% endif %}" href="?kind={{ val }}">{{ label }}</a>{% endfor %}
+</div>
 {% if resources %}
 <table class="grid"><thead><tr><th>Sarlavha</th><th>Ko‘rinishi</th><th>Turkum</th><th>Fanlar</th><th>Tasdiq</th><th>AI moslik</th><th></th></tr></thead><tbody>
   {% for r in resources %}<tr>
