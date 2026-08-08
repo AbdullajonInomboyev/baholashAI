@@ -124,3 +124,85 @@ def materials(request):
     ctx = _base(request)
     ctx.update({"active": "materials", "groups": list(groups.items())})
     return render(request, "portal/student/materials.html", ctx)
+
+
+# ==================== Mening fanlarim (talaba: tree + fan ichi) ====================
+
+def _my_courses_qs(user):
+    from academics.models import Course
+    filters = Q()
+    for e in _my_enrollments(user):
+        filters |= Q(curriculum__direction=e.direction,
+                     curriculum__academic_year=e.academic_year,
+                     curriculum__study_form=e.study_form)
+    if not filters:
+        return Course.objects.none()
+    return (Course.objects.filter(filters)
+            .select_related("curriculum__direction", "curriculum__academic_year").distinct())
+
+
+def _get_my_course(user, pk):
+    from academics.models import Course
+    return get_object_or_404(_my_courses_qs(user), pk=pk)
+
+
+@role_required(Role.STUDENT)
+def my_courses(request):
+    ctx = _base(request)
+    courses = list(_my_courses_qs(request.user))
+    years = {}
+    for c in courses:
+        y = c.curriculum.academic_year
+        yn = years.setdefault(y.id, {"year": y, "sems": {}})
+        placed = False
+        for pl in c.placements.select_related("semester"):
+            yn["sems"].setdefault(pl.semester.number, []).append(c)
+            placed = True
+        if not placed:
+            yn["sems"].setdefault(0, []).append(c)
+    tree = []
+    for yn in sorted(years.values(), key=lambda x: x["year"].title, reverse=True):
+        sems = [{"n": n, "courses": cs} for n, cs in sorted(yn["sems"].items())]
+        tree.append({"year": yn["year"], "sems": sems})
+    ctx.update({"active": "mycourses", "tree": tree, "n_courses": len(courses)})
+    return render(request, "portal/student/my_courses.html", ctx)
+
+
+@role_required(Role.STUDENT)
+def course_view(request, pk):
+    from teaching.models import Resource, ResourceLink, TeacherAssignment
+    from assessment.models import Quiz, CriterionScore, TeacherReview
+    course = _get_my_course(request.user, pk)
+    # o'qituvchi(lar)
+    teachers = [ta.teacher for ta in TeacherAssignment.objects.filter(
+        department_course__course=course, status=TeacherAssignment.Status.ACTIVE).select_related("teacher")]
+    # materiallar (faqat tasdiqlangan resurslar), tur bo'yicha guruhlangan
+    links = (ResourceLink.objects
+             .filter(teacher_assignment__department_course__course=course,
+                     resource__approval_status="approved")
+             .select_related("resource", "topic").distinct())
+    materials = {}
+    for l in links:
+        materials.setdefault(l.resource.get_kind_display(), []).append(l)
+    # topshiriqlar (shu fan)
+    my_assignments = _visible_assignments(request.user).filter(
+        teacher_assignment__department_course__course=course)
+    # testlar
+    quizzes = Quiz.objects.filter(
+        teacher_assignment__department_course__course=course, is_open=True).distinct()
+    # baholar (shu fan topshiriqlari bo'yicha)
+    my_subs = Submission.objects.filter(
+        student=request.user, assignment__teacher_assignment__department_course__course=course
+    ).select_related("assignment", "ai_evaluation", "teacher_review")
+    try:
+        syllabus = course.syllabus
+    except Exception:
+        syllabus = None
+    ctx = _base(request)
+    ctx.update({"active": "mycourses", "course": course, "teachers": teachers,
+                "materials": materials, "topics": course.topics.all(),
+                "literature": course.literature.all(), "syllabus": syllabus,
+                "assignments": my_assignments, "quizzes": quizzes, "subs": my_subs,
+                "placements": course.placements.select_related("semester"),
+                "control_types": course.control_types.all()})
+    return render(request, "portal/student/course_view.html", ctx)
