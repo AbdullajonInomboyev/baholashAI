@@ -1,0 +1,33 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Nazorat{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Nazorat</h1></div>
+<div class="help" style="margin-bottom:12px">Har bir fan bo‘yicha nazorat turlari va baholash mezoni (vaznlar 100% bo‘lishi tavsiya etiladi), testlar va nazorat savollari.</div>
+{% if rows %}
+  {% for r in rows %}
+  <div class="panel-card">
+    <h2>{{ r.course.code }} — {{ r.course.name }}</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+      <span class="tag mut">Testlar: {{ r.quizzes|length }}</span>
+      <span class="tag mut">Nazorat savollari: {{ r.control_q }}</span>
+      <span class="tag {% if r.total != 100 %}warn{% else %}ok{% endif %}">Baholash: {{ r.total }}%</span>
+    </div>
+    {% if r.control_types %}
+    <table class="grid"><thead><tr><th>Nazorat turi</th><th>Vazn (%)</th><th></th></tr></thead><tbody>
+      {% for c in r.control_types %}<tr><td>{{ c.name }}</td><td>{{ c.weight }}%</td>
+        <td><form class="inline-form" method="post" action="{% url 'portal:teacher_control_delete' c.pk %}">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td></tr>{% endfor %}
+    </tbody></table>
+    {% else %}<div class="help">Nazorat turi kiritilmagan.</div>{% endif %}
+    <form class="stack" method="post" action="{% url 'portal:teacher_control_add' r.course.pk %}" style="margin-top:12px">{% csrf_token %}
+      <div class="row"><div><label>Nazorat turi</label><input type="text" name="name" placeholder="Masalan: Oraliq nazorat" class="inp" required></div>
+        <div style="max-width:130px"><label>Vazn (%)</label><input type="number" name="weight" min="0" max="100" value="0" class="inp"></div></div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn sm" type="submit">Qo‘shish</button>
+        <a class="btn ghost sm" href="{% url 'portal:teacher_quizzes' %}">Testlar bo‘limi</a></div>
+    </form>
+  </div>
+  {% endfor %}
+{% else %}<div class="empty">Sizga fan biriktirilmagan.</div>{% endif %}
+<style>.inp{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px}</style>
+{% endblock %}

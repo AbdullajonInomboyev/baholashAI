@@ -34,17 +34,108 @@ def _base(request):
 
 @role_required(Role.TEACHER)
 def dashboard(request):
+    from academics.models import StudentEnrollment
     ctx = _base(request)
     mine = _my_assignments(request.user)
+    my_courses = _my_courses_qs(request.user)
+    total_hours = sum(c.total_hours or 0 for c in my_courses)
+    group_ids = list(_my_groups_qs(request.user).values_list("id", flat=True))
+    n_students = StudentEnrollment.objects.filter(group_id__in=group_ids).count()
     ctx.update({
-        "active": "courses",
-        "n_courses": mine.count(),
+        "active": "dashboard",
+        "n_courses": my_courses.count(),
+        "n_groups": len(group_ids),
+        "n_students": n_students,
+        "total_hours": total_hours,
         "n_assignments": Assignment.objects.filter(teacher_assignment__in=mine).count(),
         "n_pending": Submission.objects.filter(
             assignment__teacher_assignment__in=mine, status=Submission.Status.AI_EVALUATED).count(),
         "n_resources": Resource.objects.filter(uploaded_by=request.user).count(),
+        "n_in_review": Resource.objects.filter(
+            uploaded_by=request.user, dept_status=Resource.DeptStatus.NEW).count(),
+        "recent_resources": Resource.objects.filter(uploaded_by=request.user).order_by("-created_at")[:5],
+        "recent_notifications": request.user.notifications.all()[:5],
     })
     return render(request, "portal/teacher/dashboard.html", ctx)
+
+
+# ==================== Hisobotlar (o'qituvchi) ====================
+
+@role_required(Role.TEACHER)
+def reports(request):
+    from academics.models import StudentEnrollment
+    ctx = _base(request)
+    my_courses = _my_courses_qs(request.user)
+    group_ids = list(_my_groups_qs(request.user).values_list("id", flat=True))
+    ctx.update({"active": "reports", "stats": {
+        "courses": my_courses.count(),
+        "resources": Resource.objects.filter(uploaded_by=request.user).count(),
+        "approved": Resource.objects.filter(uploaded_by=request.user, approval_status="approved").count(),
+        "groups": len(group_ids),
+        "students": StudentEnrollment.objects.filter(group_id__in=group_ids).count(),
+        "hours": sum(c.total_hours or 0 for c in my_courses),
+    }})
+    return render(request, "portal/teacher/reports.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def report_pdf(request):
+    from django.http import HttpResponse
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+    from io import BytesIO
+    buf = BytesIO()
+    doc = SimpleDocTemplate(buf, pagesize=A4, topMargin=18 * mm, bottomMargin=14 * mm)
+    styles = getSampleStyleSheet()
+    who = request.user.full_name or request.user.username
+    elems = [Paragraph(f"O‘qituvchi hisoboti — {who}", styles["Title"]), Spacer(1, 8)]
+    rows = [["Fan kodi", "Fan nomi", "Soat", "Resurslar"]]
+    for c in _my_courses_qs(request.user):
+        n_res = Resource.objects.filter(
+            uploaded_by=request.user,
+            links__teacher_assignment__department_course__course=c).distinct().count()
+        rows.append([c.code, c.name, str(c.total_hours or 0), str(n_res)])
+    if len(rows) == 1:
+        rows.append(["—", "Fan biriktirilmagan", "0", "0"])
+    t = Table(rows, repeatRows=1, hAlign="LEFT", colWidths=[60, 220, 50, 70])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#3d5ee1")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("GRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#c9cede")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#f4f6fa")]),
+        ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+    elems.append(t)
+    doc.build(elems)
+    resp = HttpResponse(buf.getvalue(), content_type="application/pdf")
+    resp["Content-Disposition"] = 'attachment; filename="oqituvchi_hisoboti.pdf"'
+    return resp
+
+
+@role_required(Role.TEACHER)
+def report_excel(request):
+    from django.http import HttpResponse
+    from openpyxl import Workbook
+    from io import BytesIO
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Fanlar"
+    ws.append(["Fan kodi", "Fan nomi", "Soat", "Resurslar"])
+    for c in _my_courses_qs(request.user):
+        n_res = Resource.objects.filter(
+            uploaded_by=request.user,
+            links__teacher_assignment__department_course__course=c).distinct().count()
+        ws.append([c.code, c.name, c.total_hours or 0, n_res])
+    buf = BytesIO()
+    wb.save(buf)
+    resp = HttpResponse(buf.getvalue(),
+                        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resp["Content-Disposition"] = 'attachment; filename="oqituvchi_hisoboti.xlsx"'
+    return resp
 
 
 @role_required(Role.TEACHER)
@@ -633,3 +724,117 @@ def my_schedule(request):
                 "days": Lesson.WeekDay.choices, "rows": rows,
                 "today_lessons": today_lessons, "has_slots": bool(slots)})
     return render(request, "portal/teacher/schedule.html", ctx)
+
+
+# ==================== Nazorat (o'qituvchi) ====================
+
+@role_required(Role.TEACHER)
+def assessment_center(request):
+    from assessment.models import Quiz
+    from teaching.models import Resource
+    courses = list(_my_courses_qs(request.user))
+    rows = []
+    for c in courses:
+        cts = list(c.control_types.all())
+        quizzes = Quiz.objects.filter(
+            teacher_assignment__teacher=request.user,
+            teacher_assignment__department_course__course=c).distinct()
+        cq = Resource.objects.filter(
+            uploaded_by=request.user, kind=Resource.Kind.CONTROL_Q,
+            links__teacher_assignment__department_course__course=c).distinct().count()
+        rows.append({"course": c, "control_types": cts,
+                     "total": sum(x.weight for x in cts),
+                     "quizzes": quizzes, "control_q": cq})
+    ctx = _base(request)
+    ctx.update({"active": "control", "rows": rows})
+    return render(request, "portal/teacher/control.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def control_add(request, pk):
+    from academics.models import ControlType
+    course = _get_my_course(request.user, pk)
+    name = (request.POST.get("name") or "").strip()
+    try:
+        weight = int(request.POST.get("weight") or 0)
+    except ValueError:
+        weight = 0
+    if name:
+        ControlType.objects.create(course=course, name=name, weight=weight,
+                                   order=course.control_types.count() + 1)
+        messages.success(request, "Nazorat turi qo‘shildi.")
+    return redirect("portal:teacher_control")
+
+
+@role_required(Role.TEACHER)
+def control_delete(request, pk):
+    from academics.models import ControlType
+    ct = get_object_or_404(ControlType, pk=pk)
+    # faqat o'z fanining nazorat turini o'chirish
+    _get_my_course(request.user, ct.course_id)
+    ct.delete()
+    messages.success(request, "Nazorat turi o‘chirildi.")
+    return redirect("portal:teacher_control")
+
+
+# ==================== Xabarlar (o'qituvchi) ====================
+
+@role_required(Role.TEACHER)
+def messages_center(request):
+    from core.models import Message
+    from django.contrib.auth import get_user_model
+    ctx = _base(request)
+    tab = request.GET.get("tab", "incoming")
+    incoming = (Message.objects.filter(recipient=request.user)
+                .select_related("sender").order_by("-created_at"))
+    if tab == "incoming":
+        incoming.filter(is_read=False).update(is_read=True)
+    sent = (Message.objects.filter(sender=request.user)
+            .select_related("recipient").order_by("-created_at"))
+    heads = get_user_model().objects.filter(roles__role=Role.DEPT_HEAD).distinct()
+    ctx.update({"active": "messages", "tab": tab, "incoming": incoming,
+                "sent": sent, "heads": heads})
+    return render(request, "portal/teacher/messages.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def message_send(request):
+    from core.models import Message
+    from django.contrib.auth import get_user_model
+    recipient = get_object_or_404(get_user_model(), pk=request.POST.get("recipient"))
+    body = (request.POST.get("body") or "").strip()
+    if body:
+        Message.objects.create(sender=request.user, recipient=recipient, body=body)
+        notify(recipient, f"O‘qituvchidan xabar: {body[:60]}", reverse("portal:dashboard"))
+        messages.success(request, "Xabar yuborildi.")
+    return redirect("/zamdekan/oqituvchi/xabarlar/?tab=sent")
+
+
+# ==================== Profil (o'qituvchi) ====================
+
+@role_required(Role.TEACHER)
+def profile(request):
+    ctx = _base(request)
+    user = request.user
+    if request.method == "POST" and request.POST.get("form") == "info":
+        for f in ["full_name", "phone", "email", "position", "academic_degree", "academic_title"]:
+            setattr(user, f, request.POST.get(f, "").strip())
+        user.save()
+        messages.success(request, "Ma‘lumotlar saqlandi.")
+        return redirect("portal:teacher_profile")
+    if request.method == "POST" and request.POST.get("form") == "password":
+        old = request.POST.get("old_password", "")
+        new = request.POST.get("new_password", "")
+        new2 = request.POST.get("new_password2", "")
+        if not user.check_password(old):
+            messages.error(request, "Joriy parol noto‘g‘ri.")
+        elif len(new) < 6:
+            messages.error(request, "Yangi parol kamida 6 belgidan iborat bo‘lsin.")
+        elif new != new2:
+            messages.error(request, "Yangi parollar mos kelmadi.")
+        else:
+            user.set_password(new); user.save()
+            messages.success(request, "Parol yangilandi. Qayta kiring.")
+            return redirect("accounts:logout")
+    ctx.update({"active": "profile", "user_obj": user})
+    return render(request, "portal/teacher/profile.html", ctx)

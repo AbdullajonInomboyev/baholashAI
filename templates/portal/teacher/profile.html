@@ -1,0 +1,30 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Profil{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Profil</h1></div>
+<div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="panel-card"><h2>Shaxsiy ma‘lumotlar</h2>
+    <form class="stack" method="post">{% csrf_token %}<input type="hidden" name="form" value="info">
+      <label>F.I.Sh.</label><input class="inp" type="text" name="full_name" value="{{ user_obj.full_name }}">
+      <label style="margin-top:8px">Lavozim</label><input class="inp" type="text" name="position" value="{{ user_obj.position }}">
+      <div class="row" style="margin-top:8px"><div><label>Ilmiy daraja</label><input class="inp" type="text" name="academic_degree" value="{{ user_obj.academic_degree }}"></div>
+        <div><label>Ilmiy unvon</label><input class="inp" type="text" name="academic_title" value="{{ user_obj.academic_title }}"></div></div>
+      <div class="row" style="margin-top:8px"><div><label>Telefon</label><input class="inp" type="text" name="phone" value="{{ user_obj.phone }}"></div>
+        <div><label>Email</label><input class="inp" type="email" name="email" value="{{ user_obj.email }}"></div></div>
+      <div style="margin-top:12px"><button class="btn" type="submit">Saqlash</button></div>
+    </form>
+  </div>
+  <div class="panel-card"><h2>Parolni almashtirish</h2>
+    <form class="stack" method="post">{% csrf_token %}<input type="hidden" name="form" value="password">
+      <label>Joriy parol</label><input class="inp" type="password" name="old_password" required>
+      <label style="margin-top:8px">Yangi parol</label><input class="inp" type="password" name="new_password" required>
+      <label style="margin-top:8px">Yangi parol (takror)</label><input class="inp" type="password" name="new_password2" required>
+      <div style="margin-top:12px"><button class="btn" type="submit">Parolni yangilash</button></div>
+    </form>
+    <hr style="margin:16px 0;border:none;border-top:1px solid var(--line)">
+    <a class="btn ghost" href="{% url 'accounts:logout' %}">Tizimdan chiqish</a>
+  </div>
+</div>
+<style>.inp{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px}</style>
+{% endblock %}

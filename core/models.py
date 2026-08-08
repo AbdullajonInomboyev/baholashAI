@@ -122,6 +122,7 @@ class Message(models.Model):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="received_messages",
         verbose_name="Qabul qiluvchi")
     body = models.TextField("Xabar")
+    is_read = models.BooleanField("O‘qilgan", default=False)
     created_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
