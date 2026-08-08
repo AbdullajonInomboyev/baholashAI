@@ -114,14 +114,15 @@ class Resource(models.Model):
     reviewed_at = models.DateTimeField(null=True, blank=True)
 
     class DeptStatus(models.TextChoices):
-        NEW = "new", "Tekshirilmagan"
+        DRAFT = "draft", "Qoralama"
+        NEW = "new", "Tekshiruvda"
         APPROVED = "dept_approved", "Kafedra tasdiqladi"
         RETURNED = "returned", "Tuzatishga qaytarilgan"
         FORWARDED = "forwarded", "Zamdekanga yuborilgan"
         ARCHIVED = "archived", "Arxiv"
 
     dept_status = models.CharField(
-        "Kafedra holati", max_length=15, choices=DeptStatus.choices, default=DeptStatus.NEW)
+        "Kafedra holati", max_length=15, choices=DeptStatus.choices, default=DeptStatus.DRAFT)
     dept_note = models.TextField("Kafedra izohi", blank=True)
 
     class Meta:

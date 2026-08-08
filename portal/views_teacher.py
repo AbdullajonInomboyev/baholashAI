@@ -486,3 +486,55 @@ def literature_delete(request, pk, lit_pk):
     get_object_or_404(CourseLiterature, pk=lit_pk, course=course).delete()
     messages.success(request, "Adabiyot o‘chirildi.")
     return redirect("portal:teacher_course_program", pk=pk)
+
+
+# ==================== Resurs yuborish workflow (o'qituvchi) ====================
+
+@role_required(Role.TEACHER)
+def submissions_center(request):
+    ctx = _base(request)
+    qs = (Resource.objects.filter(uploaded_by=request.user)
+          .select_related("review")
+          .prefetch_related("links__teacher_assignment__department_course__course"))
+    status = request.GET.get("status", "draft")
+    if status in dict(Resource.DeptStatus.choices):
+        qs = qs.filter(dept_status=status)
+    ctx.update({"active": "submit", "resources": qs, "f_status": status,
+                "statuses": Resource.DeptStatus.choices})
+    return render(request, "portal/teacher/submit.html", ctx)
+
+
+def _my_resource(request, pk):
+    return get_object_or_404(Resource, pk=pk, uploaded_by=request.user)
+
+
+@role_required(Role.TEACHER)
+def resource_submit(request, pk):
+    """Qoralama yoki qaytarilganni kafedra tekshiruviga yuborish."""
+    r = _my_resource(request, pk)
+    if r.dept_status in (Resource.DeptStatus.DRAFT, Resource.DeptStatus.RETURNED):
+        r.dept_status = Resource.DeptStatus.NEW
+        r.save(update_fields=["dept_status"])
+        # kafedra mudir(lar)iga xabar
+        from academics.models import Department
+        depts = set()
+        for link in r.links.select_related("teacher_assignment__department_course__department"):
+            d = link.teacher_assignment.department_course.department
+            if d:
+                depts.add(d)
+        for d in depts:
+            for head in d.heads.all() if hasattr(d, "heads") else []:
+                notify(head, f"Yangi resurs tekshiruvga keldi: {r.title}",
+                       reverse("portal:dept_eresources"))
+        messages.success(request, "Resurs kafedra tekshiruviga yuborildi.")
+    return redirect(request.META.get("HTTP_REFERER", "portal:teacher_submit"))
+
+
+@role_required(Role.TEACHER)
+def resource_to_draft(request, pk):
+    r = _my_resource(request, pk)
+    if r.dept_status == Resource.DeptStatus.RETURNED:
+        r.dept_status = Resource.DeptStatus.DRAFT
+        r.save(update_fields=["dept_status"])
+        messages.success(request, "Resurs qoralamaga qaytarildi (tahrirlashingiz mumkin).")
+    return redirect(request.META.get("HTTP_REFERER", "portal:teacher_submit"))

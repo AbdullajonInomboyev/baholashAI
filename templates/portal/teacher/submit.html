@@ -1,0 +1,34 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Resurs yuborish{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Resurs yuborish</h1></div>
+<div class="help" style="margin-bottom:12px">Oqim: Qoralama → Tekshiruvga yuborish → Kafedra mudiri tekshiruvida → (kerak bo‘lsa) Tuzatishga qaytarilgan → Tasdiqlangan/Zamdekanga → Arxiv.</div>
+<div class="filters" style="margin-bottom:14px">
+  {% for val, label in statuses %}<a class="chip {% if f_status == val %}active{% endif %}" href="?status={{ val }}">{{ label }}</a>{% endfor %}
+</div>
+{% if resources %}
+<table class="grid"><thead><tr><th>Resurs</th><th>Turkum</th><th>Fanlar</th><th>Holat</th><th>Amal</th></tr></thead><tbody>
+  {% for r in resources %}<tr>
+    <td><b>{{ r.title }}</b> <span class="tag mut">{{ r.get_resource_format_display }}</span>
+      {% if r.dept_status == 'returned' and r.dept_note %}<div class="help">Kafedra izohi: {{ r.dept_note }}</div>{% endif %}</td>
+    <td>{{ r.get_kind_display }}</td>
+    <td>{% for l in r.links.all %}<span class="tag mut">{{ l.teacher_assignment.department_course.course.code }}</span> {% endfor %}</td>
+    <td>{% if r.dept_status == 'draft' %}<span class="tag mut">Qoralama</span>
+      {% elif r.dept_status == 'new' %}<span class="tag warn">Tekshiruvda</span>
+      {% elif r.dept_status == 'dept_approved' %}<span class="tag ok">Kafedra tasdiqladi</span>
+      {% elif r.dept_status == 'returned' %}<span class="tag bad">Tuzatishga qaytarilgan</span>
+      {% elif r.dept_status == 'forwarded' %}<span class="tag" style="background:#eaeefc;color:#3d5ee1">Zamdekanga yuborilgan</span>
+      {% else %}<span class="tag mut">Arxiv</span>{% endif %}</td>
+    <td class="actions">
+      {% if r.resource_format == 'file' and r.file %}<a class="btn ghost sm" href="{{ r.file.url }}">Ko‘rish</a>{% elif r.url %}<a class="btn ghost sm" href="{{ r.url }}" target="_blank">Ko‘rish</a>{% endif %}
+      {% if r.dept_status == 'draft' %}<form class="inline-form" method="post" action="{% url 'portal:teacher_resource_submit' r.pk %}">{% csrf_token %}<button class="btn sm" type="submit">Tekshiruvga yuborish</button></form>{% endif %}
+      {% if r.dept_status == 'returned' %}
+        <form class="inline-form" method="post" action="{% url 'portal:teacher_resource_submit' r.pk %}">{% csrf_token %}<button class="btn sm" type="submit">Qayta yuborish</button></form>
+        <form class="inline-form" method="post" action="{% url 'portal:teacher_resource_draft' r.pk %}">{% csrf_token %}<button class="btn ghost sm" type="submit">Qoralamaga</button></form>
+      {% endif %}
+    </td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Bu holatda resurs yo‘q. «Resurslar» bo‘limidan yangi resurs yuklang — u avval «Qoralama» bo‘ladi.</div>{% endif %}
+{% endblock %}

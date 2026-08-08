@@ -176,11 +176,18 @@ class Command(BaseCommand):
             (Resource.ApprovalStatus.PENDING, ""),
             (Resource.ApprovalStatus.REJECTED, "Sifat past — mavzular to‘liq yoritilmagan."),
         ]
+        dept_states = [
+            Resource.DeptStatus.NEW, Resource.DeptStatus.DRAFT,
+            Resource.DeptStatus.RETURNED, Resource.DeptStatus.FORWARDED,
+        ]
         for idx, res in enumerate(res_all):
             st, note = statuses[idx % len(statuses)]
             res.approval_status = st
             res.review_note = note
-            res.save(update_fields=["approval_status", "review_note"])
+            res.dept_status = dept_states[idx % len(dept_states)]
+            if res.dept_status == Resource.DeptStatus.RETURNED:
+                res.dept_note = "Mavzu qamrovini kengaytiring."
+            res.save(update_fields=["approval_status", "review_note", "dept_status", "dept_note"])
 
         # bir nechta talaba
         for i in range(1, 4):

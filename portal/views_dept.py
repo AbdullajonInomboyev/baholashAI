@@ -330,7 +330,7 @@ def resources_workflow(request):
     if dept:
         qs = (Resource.objects
               .filter(links__teacher_assignment__department_course__department=dept)
-              .distinct().select_related("uploaded_by", "review")
+              .exclude(dept_status="draft").distinct().select_related("uploaded_by", "review")
               .prefetch_related("links__teacher_assignment__department_course__course"))
         status = request.GET.get("status", "new")
         counts = {s: qs.filter(dept_status=s).count() for s, _ in Resource.DeptStatus.choices}
@@ -338,7 +338,7 @@ def resources_workflow(request):
             qs = qs.filter(dept_status=status)
         ctx["f_status"] = status
     ctx.update({"active": "eresources", "resources": qs,
-                "statuses": Resource.DeptStatus.choices, "counts": counts})
+                "statuses": [x for x in Resource.DeptStatus.choices if x[0] != "draft"], "counts": counts})
     return render(request, "portal/dept_head/resources_workflow.html", ctx)
 
 

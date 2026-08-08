@@ -124,6 +124,9 @@ urlpatterns = [
     # ---- O'qituvchi ----
     path("oqituvchi/", views_teacher.dashboard, name="teacher_dashboard"),
     path("oqituvchi/fanlarim/", views_teacher.my_courses, name="teacher_my_courses"),
+    path("oqituvchi/yuborish/", views_teacher.submissions_center, name="teacher_submit"),
+    path("oqituvchi/resurs/<int:pk>/yuborish/", views_teacher.resource_submit, name="teacher_resource_submit"),
+    path("oqituvchi/resurs/<int:pk>/qoralama/", views_teacher.resource_to_draft, name="teacher_resource_draft"),
     path("oqituvchi/fanlarim/<int:pk>/", views_teacher.course_program, name="teacher_course_program"),
     path("oqituvchi/fanlarim/<int:pk>/sillabus/", views_teacher.syllabus_save, name="teacher_syllabus_save"),
     path("oqituvchi/fanlarim/<int:pk>/mavzu/qoshish/", views_teacher.topic_add, name="teacher_topic_add"),
