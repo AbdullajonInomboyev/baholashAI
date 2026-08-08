@@ -165,6 +165,9 @@ urlpatterns = [
     # ---- Talaba ----
     path("talaba/", views_student.dashboard, name="student_dashboard"),
     path("talaba/fanlarim/", views_student.my_courses, name="student_my_courses"),
+    path("talaba/dars-jadvali/", views_student.schedule, name="student_schedule"),
+    path("talaba/guruhim/", views_student.my_group, name="student_my_group"),
+    path("talaba/ozlashtirish/", views_student.performance, name="student_performance"),
     path("talaba/fanlarim/<int:pk>/", views_student.course_view, name="student_course_view"),
     path("talaba/topshiriqlar/", views_student.assignments, name="student_assignments"),
     path("talaba/topshiriq/<int:pk>/", views_student.assignment_detail, name="student_assignment_detail"),

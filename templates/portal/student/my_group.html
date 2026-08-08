@@ -1,0 +1,31 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}Mening guruhim{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Mening guruhim</h1></div>
+{% if group %}
+<div class="panel-card"><h2>Guruh ma‘lumotlari</h2>
+  <table class="grid"><tbody>
+    <tr><td>Guruh nomi</td><td><b>{{ group.name }}</b></td></tr>
+    <tr><td>Yo‘nalish</td><td>{{ group.direction.code }} — {{ group.direction.name }}</td></tr>
+    <tr><td>Kurs</td><td>{{ group.course }}-kurs</td></tr>
+    <tr><td>Ta‘lim shakli</td><td>{{ group.get_study_form_display }}</td></tr>
+    <tr><td>Kurator</td><td>{% if group.curator %}{{ group.curator.full_name|default:group.curator.username }}{% else %}—{% endif %}</td></tr>
+  </tbody></table>
+</div>
+
+<div class="panel-card"><h2>Guruhdoshlar ({{ mates|length }})</h2>
+  {% if mates %}<table class="grid"><thead><tr><th>#</th><th>F.I.Sh.</th><th>Holati</th></tr></thead><tbody>
+    {% for m in mates %}<tr><td>{{ forloop.counter }}</td><td>{{ m.student.full_name|default:m.student.username }}{% if m.student_id == request.user.id %} <span class="tag ok">men</span>{% endif %}</td>
+      <td>{% if m.status == 'active' %}{{ m.get_status_display }}{% else %}<span class="tag mut">{{ m.get_status_display }}</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Guruhda talaba yo‘q.</div>{% endif %}
+</div>
+
+<div class="panel-card"><h2>Guruh jadvali</h2>
+  {% if lessons %}<table class="grid"><thead><tr><th>Fan</th><th>Kun</th><th>Juft</th><th>O‘qituvchi</th><th>Xona</th></tr></thead><tbody>
+    {% for l in lessons %}<tr><td>{{ l.course.code }}</td><td>{{ l.get_week_day_display }}</td><td>{{ l.timeslot.order }}-juft</td>
+      <td>{{ l.teacher.full_name|default:l.teacher.username }}</td><td>{% if l.room %}{{ l.room.name }}{% else %}—{% endif %}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Jadval kiritilmagan.</div>{% endif %}
+</div>
+{% else %}<div class="empty">Siz hali guruhga biriktirilmagansiz.</div>{% endif %}
+{% endblock %}

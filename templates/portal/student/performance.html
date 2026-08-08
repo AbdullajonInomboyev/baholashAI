@@ -1,0 +1,39 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}O‘zlashtirish{% endblock %}
+{% block content %}
+<div class="page-head"><h1>O‘zlashtirish</h1></div>
+<div class="cards">
+  <div class="card"><div class="n">{{ perf.gpa }}</div><div class="k">GPA (5.0)</div></div>
+  <div class="card"><div class="n">{{ perf.avg_ball }}</div><div class="k">O‘rtacha ball</div></div>
+  <div class="card"><div class="n">{{ perf.n_courses }}</div><div class="k">Fanlar</div></div>
+  <div class="card"><div class="n">{{ perf.graded }}</div><div class="k">Baholangan</div></div>
+  <div class="card"><div class="n">{{ perf.debts }}</div><div class="k">Akademik qarzdorlik</div></div>
+</div>
+
+<div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:6px 0 16px">
+  <div class="panel-card"><h2>Statistika</h2>
+    <table class="grid"><tbody>
+      <tr><td>Eng yuqori natija</td><td><b>{{ perf.highest }}</b></td></tr>
+      <tr><td>Eng past natija</td><td><b>{{ perf.lowest }}</b></td></tr>
+      <tr><td>O‘rtacha ball</td><td><b>{{ perf.avg_ball }}</b></td></tr>
+    </tbody></table>
+  </div>
+  <div class="panel-card"><h2>Izoh</h2>
+    <div class="help">Baholar: A (90+, a‘lo), B (70–89, yaxshi), C (60–69, qoniqarli), F (60 dan past — akademik qarzdorlik). GPA 5.0 shkalada hisoblanadi.</div>
+  </div>
+</div>
+
+<div class="panel-card"><h2>Fanlar bo‘yicha natija</h2>
+  {% if perf.results %}
+  <table class="grid"><thead><tr><th>Fan</th><th>Kredit</th><th>Ball</th><th>Harf baho</th><th>Holat</th></tr></thead><tbody>
+    {% for r in perf.results %}<tr>
+      <td>{{ r.course.code }} — {{ r.course.name }}</td><td>{{ r.credit }}</td>
+      <td>{% if r.score != None %}{{ r.score }}{% else %}—{% endif %}</td>
+      <td><b>{{ r.letter }}</b></td>
+      <td>{% if r.letter == 'F' %}<span class="tag bad">{{ r.status }}</span>{% elif r.letter == '—' %}<span class="tag mut">{{ r.status }}</span>{% else %}<span class="tag ok">{{ r.status }}</span>{% endif %}</td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="empty">Fan topilmadi.</div>{% endif %}
+</div>
+{% endblock %}

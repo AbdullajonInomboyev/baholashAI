@@ -1,0 +1,50 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}Dars jadvali{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Dars jadvali</h1><div class="spacer"></div>
+  <form method="get"><select name="year" onchange="this.form.submit()" class="role-switch">
+    {% for y in years %}<option value="{{ y.pk }}" {% if year_id == y.pk %}selected{% endif %}>{{ y.title }}</option>{% endfor %}
+  </select></form></div>
+
+<div class="panel-card"><h2>Bugungi darslar</h2>
+  {% if today_lessons %}
+  <table class="grid"><thead><tr><th>Juft</th><th>Vaqt</th><th>Fan</th><th>O‘qituvchi</th><th>Xona</th><th>Tur</th></tr></thead><tbody>
+    {% for l in today_lessons %}<tr><td>{{ l.timeslot.order }}</td><td>{{ l.timeslot.start_time|time:"H:i" }}–{{ l.timeslot.end_time|time:"H:i" }}</td>
+      <td><b>{{ l.course.code }}</b> {{ l.course.name }}</td><td>{{ l.teacher.full_name|default:l.teacher.username }}</td>
+      <td>{% if l.room %}{{ l.room.name }}{% else %}—{% endif %}</td><td>{{ l.get_kind_display }}</td></tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="help">Bugun dars yo‘q.</div>{% endif %}
+</div>
+
+<h2 style="margin:16px 0 10px">Haftalik jadval</h2>
+{% if has_slots %}
+<div style="overflow-x:auto">
+<table class="grid schedule-grid">
+  <thead><tr><th style="width:80px">Juft</th>{% for dv, dl in days %}<th>{{ dl }}</th>{% endfor %}</tr></thead>
+  <tbody>
+    {% for row in rows %}<tr>
+      <td class="slot"><b>{{ row.slot.order }}</b><div class="help">{{ row.slot.start_time|time:"H:i" }}</div></td>
+      {% for cell in row.cells %}<td class="cell">
+        {% for les in cell.lessons %}<div class="lesson lt-{{ les.kind }}">
+          <div class="c">{{ les.course.code }}</div>
+          <div class="m">{{ les.teacher.full_name|default:les.teacher.username }}{% if les.room %} · {{ les.room.name }}{% endif %}</div>
+        </div>{% endfor %}
+      </td>{% endfor %}
+    </tr>{% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}<div class="empty">Jadval hali kiritilmagan.</div>{% endif %}
+<style>
+.schedule-grid{table-layout:fixed;min-width:760px}
+.schedule-grid th,.schedule-grid td{vertical-align:top;border:1px solid var(--line)}
+.schedule-grid td.slot{text-align:center;background:var(--surface-2)}
+.schedule-grid td.cell{padding:4px}
+.lesson{background:#eef2fe;border-left:3px solid #3d5ee1;border-radius:6px;padding:5px 7px;margin-bottom:4px;font-size:12px}
+.lesson.lt-practice{background:#e7f7f0;border-left-color:#0fb981}
+.lesson.lt-lab{background:#fdf1de;border-left-color:#f4a52a}
+.lesson.lt-seminar{background:#eeeafd;border-left-color:#7b61ff}
+.lesson .c{font-weight:700}.lesson .m{color:#5b6472;font-size:11px}
+</style>
+{% endblock %}

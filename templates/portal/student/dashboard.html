@@ -1,18 +1,51 @@
 {% extends 'portal/base_panel.html' %}
 {% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
-{% block crumbs %}Talaba paneli{% endblock %}
+{% block crumbs %}Boshqaruv paneli{% endblock %}
 {% block content %}
 <div class="page-head"><h1>Boshqaruv paneli</h1></div>
-<div class="cards">
-  <div class="card"><div class="n">{{ n_assignments }}</div><div class="k">Jami topshiriq</div></div>
-  <div class="card"><div class="n">{{ n_todo }}</div><div class="k">Topshirilmagan</div></div>
-  <div class="card"><div class="n">{{ n_submitted }}</div><div class="k">Topshirilgan</div></div>
+
+<div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+  <div class="panel-card"><h2>Umumiy ma‘lumot</h2>
+    <table class="grid"><tbody>
+      <tr><td>F.I.Sh.</td><td>{{ request.user.full_name|default:request.user.username }}</td></tr>
+      {% if enrollment %}
+      <tr><td>Yo‘nalish</td><td>{{ enrollment.direction.code }} — {{ enrollment.direction.name }}</td></tr>
+      <tr><td>O‘quv yili</td><td>{{ enrollment.academic_year.title }}</td></tr>
+      <tr><td>Ta‘lim shakli</td><td>{{ enrollment.get_study_form_display }}</td></tr>
+      {% endif %}
+      {% if group %}<tr><td>Kurs / guruh</td><td>{{ group.course }}-kurs · {{ group.name }}</td></tr>{% endif %}
+    </tbody></table>
+  </div>
+  <div class="panel-card"><h2>O‘zlashtirish</h2>
+    <div class="cards" style="grid-template-columns:1fr 1fr">
+      <div class="card"><div class="n">{{ perf.gpa }}</div><div class="k">GPA</div></div>
+      <div class="card"><div class="n">{{ perf.avg_ball }}</div><div class="k">O‘rtacha ball</div></div>
+      <div class="card"><div class="n">{{ perf.n_courses }}</div><div class="k">Fanlar</div></div>
+      <div class="card"><div class="n">{{ perf.debts }}</div><div class="k">Qarzdorlik</div></div>
+    </div>
+  </div>
 </div>
-<div class="panel-card">
-  <h2>Ma‘lumotlarim</h2>
-  {% for e in enrollments %}
-  <p>{{ e.direction.code }} — {{ e.direction.name }} · {{ e.get_study_form_display }} · {{ e.group_name }} · {{ e.academic_year.title }}</p>
-  {% empty %}<div class="help">Siz hali biror yo‘nalishga biriktirilmagansiz.</div>{% endfor %}
-  <a class="btn" href="{% url 'portal:student_assignments' %}">Topshiriqlarga o‘tish</a>
+
+<div class="cards" style="margin-bottom:16px">
+  <div class="card"><div class="n">{{ n_assignments }}</div><div class="k">Topshiriqlar</div></div>
+  <div class="card"><div class="n">{{ n_submitted }}</div><div class="k">Yuborilgan</div></div>
+  <div class="card"><div class="n">{{ n_todo }}</div><div class="k">Bajarilmagan</div></div>
+</div>
+
+<div class="chart-row" style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px">
+  <div class="panel-card"><h2>Bugungi darslar</h2>
+    {% if today_lessons %}
+    <table class="grid"><thead><tr><th>Juft</th><th>Fan</th><th>O‘qituvchi</th><th>Xona</th></tr></thead><tbody>
+      {% for l in today_lessons %}<tr><td>{{ l.timeslot.order }} <span class="help">{{ l.timeslot.start_time|time:"H:i" }}</span></td>
+        <td>{{ l.course.code }}</td><td>{{ l.teacher.full_name|default:l.teacher.username }}</td>
+        <td>{% if l.room %}{{ l.room.name }}{% else %}—{% endif %}</td></tr>{% endfor %}
+    </tbody></table>
+    {% else %}<div class="help">Bugun dars yo‘q.</div>{% endif %}
+  </div>
+  <div class="panel-card"><h2>Bildirishnomalar</h2>
+    {% if recent_notifications %}{% for n in recent_notifications %}
+    <div style="padding:9px 0;border-bottom:1px solid var(--line)"><div>{{ n.message }}</div><div class="help">{{ n.created_at|date:"d.m.Y H:i" }}</div></div>
+    {% endfor %}{% else %}<div class="help">Yangi bildirishnoma yo‘q.</div>{% endif %}
+  </div>
 </div>
 {% endblock %}

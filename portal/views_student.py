@@ -37,19 +37,90 @@ def _visible_assignments(user):
             .distinct())
 
 
+def _letter(score):
+    if score is None:
+        return "—", "baholanmagan"
+    if score >= 90:
+        return "A", "a‘lo"
+    if score >= 70:
+        return "B", "yaxshi"
+    if score >= 60:
+        return "C", "qoniqarli"
+    return "F", "qarzdorlik"
+
+
+def _performance(user):
+    courses = list(_my_courses_qs(user))
+    results = []
+    total = 0
+    graded = 0
+    debts = 0
+    for c in courses:
+        subs = (Submission.objects.filter(
+            student=user, assignment__teacher_assignment__department_course__course=c)
+            .select_related("teacher_review", "ai_evaluation"))
+        scores = []
+        for s in subs:
+            tr = getattr(s, "teacher_review", None)
+            ae = getattr(s, "ai_evaluation", None)
+            if tr and tr.final_score is not None:
+                scores.append(float(tr.final_score))
+            elif ae and ae.score is not None:
+                scores.append(float(ae.score))
+        avg = round(sum(scores) / len(scores), 1) if scores else None
+        letter, status = _letter(avg)
+        credit = sum(p.credits for p in c.placements.all())
+        results.append({"course": c, "score": avg, "letter": letter,
+                        "status": status, "credit": credit})
+        if avg is not None:
+            total += avg
+            graded += 1
+            if avg < 60:
+                debts += 1
+    avg_ball = round(total / graded, 1) if graded else 0
+    gpa = round(avg_ball / 20, 2) if graded else 0  # 5.0 shkala
+    all_scores = [r["score"] for r in results if r["score"] is not None]
+    return {"results": results, "avg_ball": avg_ball, "gpa": gpa,
+            "n_courses": len(courses), "graded": graded, "debts": debts,
+            "highest": max(all_scores) if all_scores else 0,
+            "lowest": min(all_scores) if all_scores else 0}
+
+
 @role_required(Role.STUDENT)
 def dashboard(request):
+    from datetime import date
+    from schedule.models import Lesson
     ctx = _base(request)
     visible = _visible_assignments(request.user)
     submitted_ids = set(Submission.objects.filter(student=request.user).values_list("assignment_id", flat=True))
+    enr = _my_enrollments(request.user).first()
+    perf = _performance(request.user)
+    groups = list(_my_groups(request.user))
+    today_wd = date.today().isoweekday()
+    today_lessons = []
+    if groups and today_wd <= 6:
+        today_lessons = (Lesson.objects.filter(groups__in=groups, week_day=today_wd, is_active=True)
+                         .select_related("course", "teacher", "room", "timeslot")
+                         .order_by("timeslot__order").distinct())
     ctx.update({
-        "active": "assignments",
+        "active": "dashboard",
         "n_assignments": visible.count(),
         "n_submitted": len(submitted_ids),
         "n_todo": visible.exclude(pk__in=submitted_ids).count(),
-        "enrollments": _my_enrollments(request.user),
+        "enrollment": enr, "group": groups[0] if groups else None,
+        "perf": perf, "today_lessons": today_lessons,
+        "recent_notifications": request.user.notifications.all()[:5],
     })
     return render(request, "portal/student/dashboard.html", ctx)
+
+
+# ==================== O'zlashtirish (talaba) ====================
+
+@role_required(Role.STUDENT)
+def performance(request):
+    ctx = _base(request)
+    ctx.update({"active": "performance", "perf": _performance(request.user)})
+    return render(request, "portal/student/performance.html", ctx)
 
 
 @role_required(Role.STUDENT)
@@ -206,3 +277,59 @@ def course_view(request, pk):
                 "placements": course.placements.select_related("semester"),
                 "control_types": course.control_types.all()})
     return render(request, "portal/student/course_view.html", ctx)
+
+
+def _my_groups(user):
+    from academics.models import AcademicGroup
+    gids = _my_enrollments(user).values_list("group_id", flat=True)
+    return AcademicGroup.objects.filter(id__in=[g for g in gids if g]).select_related("direction", "curator")
+
+
+# ==================== Dars jadvali (talaba) ====================
+
+@role_required(Role.STUDENT)
+def schedule(request):
+    from datetime import date
+    from academics.models import AcademicYear
+    from schedule.models import Lesson, TimeSlot
+    ctx = _base(request)
+    groups = list(_my_groups(request.user))
+    years = list(AcademicYear.objects.all())
+    year_id = request.GET.get("year") or (years[0].pk if years else None)
+    lessons = (Lesson.objects.filter(groups__in=groups, academic_year_id=year_id, is_active=True)
+               .select_related("course", "teacher", "room", "timeslot").distinct())
+    slots = list(TimeSlot.objects.filter(is_active=True))
+    grid = {}
+    for les in lessons:
+        grid.setdefault((les.timeslot_id, les.week_day), []).append(les)
+    rows = []
+    for slot in slots:
+        cells = [{"day": dv, "lessons": grid.get((slot.id, dv), [])}
+                 for dv, dl in Lesson.WeekDay.choices]
+        rows.append({"slot": slot, "cells": cells})
+    today_wd = date.today().isoweekday()
+    today_lessons = sorted([l for l in lessons if l.week_day == today_wd],
+                           key=lambda l: l.timeslot.order) if today_wd <= 6 else []
+    ctx.update({"active": "schedule", "years": years,
+                "year_id": int(year_id) if year_id else None,
+                "days": Lesson.WeekDay.choices, "rows": rows,
+                "today_lessons": today_lessons, "has_slots": bool(slots)})
+    return render(request, "portal/student/schedule.html", ctx)
+
+
+# ==================== Mening guruhim (talaba, faqat ko'rish) ====================
+
+@role_required(Role.STUDENT)
+def my_group(request):
+    from schedule.models import Lesson
+    ctx = _base(request)
+    group = _my_groups(request.user).first()
+    mates, lessons = [], []
+    if group:
+        mates = (StudentEnrollment.objects.filter(group=group)
+                 .select_related("student").order_by("student__full_name"))
+        lessons = (Lesson.objects.filter(groups=group, is_active=True)
+                   .select_related("course", "teacher", "room", "timeslot")
+                   .order_by("week_day", "timeslot__order").distinct())
+    ctx.update({"active": "mygroup", "group": group, "mates": mates, "lessons": lessons})
+    return render(request, "portal/student/my_group.html", ctx)
