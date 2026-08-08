@@ -1,0 +1,22 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Mening guruhlarim{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Mening guruhlarim</h1></div>
+{% if courses %}
+<div class="filters" style="margin-bottom:14px">
+  <a class="chip {% if not f_course %}active{% endif %}" href="?">Barchasi</a>
+  {% for c in courses %}<a class="chip {% if f_course == c|stringformat:'s' %}active{% endif %}" href="?course={{ c }}">{{ c }}-kurs</a>{% endfor %}
+</div>
+{% endif %}
+{% if groups %}
+<table class="grid"><thead><tr><th>Guruh</th><th>Yo‘nalish</th><th>Kurs</th><th>Ta‘lim shakli</th><th>Talabalar</th><th></th></tr></thead><tbody>
+  {% for g in groups %}<tr>
+    <td><a href="{% url 'portal:teacher_group_detail' g.pk %}"><b>{{ g.name }}</b></a>{% if g.curator_id == request.user.id %} <span class="tag ok">kurator</span>{% endif %}</td>
+    <td>{{ g.direction.code }}</td><td>{{ g.course }}-kurs</td><td>{{ g.get_study_form_display }}</td>
+    <td>{{ g.student_count }}</td>
+    <td><a class="btn ghost sm" href="{% url 'portal:teacher_group_detail' g.pk %}">Ochish</a></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Guruh topilmadi. Kafedra mudiri fan/guruh biriktirgach ko‘rinadi.</div>{% endif %}
+{% endblock %}

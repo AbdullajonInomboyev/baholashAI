@@ -538,3 +538,98 @@ def resource_to_draft(request, pk):
         r.save(update_fields=["dept_status"])
         messages.success(request, "Resurs qoralamaga qaytarildi (tahrirlashingiz mumkin).")
     return redirect(request.META.get("HTTP_REFERER", "portal:teacher_submit"))
+
+
+# ==================== Mening guruhlarim (o'qituvchi) ====================
+
+def _my_groups_qs(user):
+    from academics.models import AcademicGroup
+    from schedule.models import Lesson
+    ids = set(AcademicGroup.objects.filter(curator=user).values_list("id", flat=True))
+    ids |= set(Lesson.objects.filter(teacher=user).values_list("groups__id", flat=True))
+    # o'qitadigan fanlar yo'nalishlaridagi guruhlar
+    dir_ids = _my_courses_qs(user).values_list("curriculum__direction_id", flat=True)
+    ids |= set(AcademicGroup.objects.filter(direction_id__in=list(dir_ids)).values_list("id", flat=True))
+    ids.discard(None)
+    return (AcademicGroup.objects.filter(id__in=ids)
+            .select_related("direction", "curator").order_by("course", "name"))
+
+
+@role_required(Role.TEACHER)
+def my_groups(request):
+    ctx = _base(request)
+    groups = list(_my_groups_qs(request.user))
+    course = request.GET.get("course")
+    if course:
+        groups = [g for g in groups if str(g.course) == course]
+    ctx.update({"active": "groups", "groups": groups,
+                "courses": sorted({g.course for g in _my_groups_qs(request.user)}),
+                "f_course": course})
+    return render(request, "portal/teacher/groups.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def group_detail(request, pk):
+    from academics.models import AcademicGroup, StudentEnrollment
+    from schedule.models import Lesson
+    group = get_object_or_404(_my_groups_qs(request.user), pk=pk)
+    students = (StudentEnrollment.objects.filter(group=group)
+                .select_related("student").order_by("student__full_name"))
+    # shu guruhga o'qituvchi o'qitadigan fanlar
+    my_courses = _my_courses_qs(request.user).filter(
+        curriculum__direction=group.direction)
+    # shu guruh + shu o'qituvchi darslari
+    lessons = (Lesson.objects.filter(teacher=request.user, groups=group)
+               .select_related("course", "room", "timeslot").order_by("week_day", "timeslot__order"))
+    ctx = _base(request)
+    ctx.update({"active": "groups", "group": group, "students": students,
+                "my_courses": my_courses, "lessons": lessons})
+    return render(request, "portal/teacher/group_detail.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def student_profile(request, pk):
+    from academics.models import StudentEnrollment
+    # o'qituvchi faqat o'z guruhlaridagi talabalarni ko'radi
+    my_group_ids = list(_my_groups_qs(request.user).values_list("id", flat=True))
+    enr = get_object_or_404(
+        StudentEnrollment.objects.select_related("student", "direction", "academic_year", "group"),
+        pk=pk, group_id__in=my_group_ids)
+    ctx = _base(request)
+    ctx.update({"active": "groups", "enr": enr, "student": enr.student})
+    return render(request, "portal/teacher/student_profile.html", ctx)
+
+
+# ==================== Dars jadvali (o'qituvchi, shaxsiy) ====================
+
+@role_required(Role.TEACHER)
+def my_schedule(request):
+    from datetime import date
+    from academics.models import AcademicYear
+    from schedule.models import Lesson, TimeSlot
+    ctx = _base(request)
+    years = list(AcademicYear.objects.all())
+    year_id = request.GET.get("year") or (years[0].pk if years else None)
+    lessons = (Lesson.objects.filter(teacher=request.user, academic_year_id=year_id, is_active=True)
+               .select_related("course", "room", "timeslot").prefetch_related("groups"))
+    slots = list(TimeSlot.objects.filter(is_active=True))
+    grid = {}
+    for les in lessons:
+        grid.setdefault((les.timeslot_id, les.week_day), []).append(les)
+    rows = []
+    for slot in slots:
+        cells = [{"day": dv, "lessons": grid.get((slot.id, dv), [])}
+                 for dv, dl in Lesson.WeekDay.choices]
+        rows.append({"slot": slot, "cells": cells})
+    # bugungi darslar (Dushanba=1 .. Shanba=6)
+    today_wd = date.today().isoweekday()
+    today_lessons = []
+    if today_wd <= 6:
+        today_lessons = sorted(
+            [l for l in lessons if l.week_day == today_wd],
+            key=lambda l: l.timeslot.order)
+    ctx.update({"active": "schedule", "years": years,
+                "year_id": int(year_id) if year_id else None,
+                "days": Lesson.WeekDay.choices, "rows": rows,
+                "today_lessons": today_lessons, "has_slots": bool(slots)})
+    return render(request, "portal/teacher/schedule.html", ctx)

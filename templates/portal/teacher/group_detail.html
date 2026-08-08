@@ -1,0 +1,29 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ group.name }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ group.name }}</h1></div>
+<div class="help" style="margin-bottom:14px">{{ group.direction.code }} — {{ group.direction.name }} · {{ group.course }}-kurs · {{ group.get_study_form_display }}
+  · Kurator: {% if group.curator %}{{ group.curator.full_name|default:group.curator.username }}{% else %}—{% endif %}</div>
+
+<div class="panel-card"><h2>Men o‘qitadigan fanlar</h2>
+  {% if my_courses %}<div style="display:flex;flex-wrap:wrap;gap:8px">{% for c in my_courses %}<a class="chip" href="{% url 'portal:teacher_course_program' c.pk %}">{{ c.code }} · {{ c.name }}</a>{% endfor %}</div>
+  {% else %}<div class="help">Bu guruh yo‘nalishida sizga biriktirilgan fan yo‘q.</div>{% endif %}
+</div>
+
+<div class="panel-card"><h2>Talabalar ({{ students|length }})</h2>
+  {% if students %}<table class="grid"><thead><tr><th>F.I.Sh.</th><th>Holati</th><th></th></tr></thead><tbody>
+    {% for s in students %}<tr><td>{{ s.student.full_name|default:s.student.username }}</td>
+      <td>{% if s.status == 'active' %}<span class="tag ok">{{ s.get_status_display }}</span>{% else %}<span class="tag mut">{{ s.get_status_display }}</span>{% endif %}</td>
+      <td><a class="btn ghost sm" href="{% url 'portal:teacher_student_profile' s.pk %}">Profil</a></td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Guruhda talaba yo‘q.</div>{% endif %}
+</div>
+
+<div class="panel-card"><h2>Guruh bilan darslarim</h2>
+  {% if lessons %}<table class="grid"><thead><tr><th>Fan</th><th>Kun</th><th>Juft</th><th>Xona</th><th>Tur</th></tr></thead><tbody>
+    {% for l in lessons %}<tr><td>{{ l.course.code }}</td><td>{{ l.get_week_day_display }}</td><td>{{ l.timeslot.order }}-juft</td>
+      <td>{% if l.room %}{{ l.room.name }}{% else %}—{% endif %}</td><td>{{ l.get_kind_display }}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Bu guruh bilan darsingiz jadvalga kiritilmagan.</div>{% endif %}
+</div>
+<a class="btn ghost" href="{% url 'portal:teacher_my_groups' %}">← Guruhlar</a>
+{% endblock %}

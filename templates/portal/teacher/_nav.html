@@ -9,6 +9,10 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg><span>Resurslar</span></a>
 <a href="{% url 'portal:teacher_submit' %}" class="{% if active == 'submit' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg><span>Resurs yuborish</span></a>
+<a href="{% url 'portal:teacher_my_groups' %}" class="{% if active == 'groups' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg><span>Mening guruhlarim</span></a>
+<a href="{% url 'portal:teacher_schedule' %}" class="{% if active == 'schedule' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 10h18M8 2v4M16 2v4"/></svg><span>Dars jadvali</span></a>
 <a href="{% url 'portal:teacher_gradebook' %}" class="{% if active == 'gradebook' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 4-5"/></svg><span>Baholar jurnali</span></a>
 <a href="{% url 'portal:teacher_quizzes' %}" class="{% if active == 'quizzes' %}active{% endif %}">
