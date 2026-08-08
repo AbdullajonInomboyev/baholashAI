@@ -1,0 +1,41 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}Profil{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Profil</h1></div>
+<div class="chart-row" style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div class="panel-card"><h2>Shaxsiy ma‘lumotlar</h2>
+    <form class="stack" method="post">{% csrf_token %}<input type="hidden" name="form" value="info">
+      <label>F.I.Sh.</label><input class="inp" type="text" name="full_name" value="{{ user_obj.full_name }}">
+      <label style="margin-top:8px">Login</label><input class="inp" type="text" value="{{ user_obj.username }}" disabled style="background:var(--surface-2)">
+      <div class="row" style="margin-top:8px"><div><label>Tug‘ilgan sana</label><input class="inp" type="date" name="birth_date" value="{{ user_obj.birth_date|date:'Y-m-d' }}"></div>
+        <div><label>Telefon</label><input class="inp" type="text" name="phone" value="{{ user_obj.phone }}"></div></div>
+      <label style="margin-top:8px">Email</label><input class="inp" type="email" name="email" value="{{ user_obj.email }}">
+      <div style="margin-top:12px"><button class="btn" type="submit">Saqlash</button></div>
+    </form>
+  </div>
+  <div class="panel-card"><h2>Ta‘lim ma‘lumotlari</h2>
+    <table class="grid"><tbody>
+      {% if enrollment %}
+      <tr><td>Yo‘nalish</td><td>{{ enrollment.direction.code }} — {{ enrollment.direction.name }}</td></tr>
+      <tr><td>Fakultet</td><td>{{ enrollment.direction.faculty.name }}</td></tr>
+      <tr><td>O‘quv yili</td><td>{{ enrollment.academic_year.title }}</td></tr>
+      <tr><td>Ta‘lim shakli</td><td>{{ enrollment.get_study_form_display }}</td></tr>
+      <tr><td>Holati</td><td>{{ enrollment.get_status_display }}</td></tr>
+      {% endif %}
+      {% if group %}<tr><td>Kurs / guruh</td><td>{{ group.course }}-kurs · {{ group.name }}</td></tr>{% endif %}
+    </tbody></table>
+    <hr style="margin:14px 0;border:none;border-top:1px solid var(--line)">
+    <h2>Parolni almashtirish</h2>
+    <form class="stack" method="post">{% csrf_token %}<input type="hidden" name="form" value="password">
+      <label>Joriy parol</label><input class="inp" type="password" name="old_password" required>
+      <div class="row" style="margin-top:8px"><div><label>Yangi parol</label><input class="inp" type="password" name="new_password" required></div>
+        <div><label>Takror</label><input class="inp" type="password" name="new_password2" required></div></div>
+      <div style="margin-top:12px"><button class="btn" type="submit">Parolni yangilash</button></div>
+    </form>
+    <hr style="margin:14px 0;border:none;border-top:1px solid var(--line)">
+    <a class="btn ghost" href="{% url 'accounts:logout' %}">Tizimdan chiqish</a>
+  </div>
+</div>
+<style>.inp{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px}</style>
+{% endblock %}

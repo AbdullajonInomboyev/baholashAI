@@ -333,3 +333,101 @@ def my_group(request):
                    .order_by("week_day", "timeslot__order").distinct())
     ctx.update({"active": "mygroup", "group": group, "mates": mates, "lessons": lessons})
     return render(request, "portal/student/my_group.html", ctx)
+
+
+# ==================== E'lonlar + Xabarlar (talaba) ====================
+
+@role_required(Role.STUDENT)
+def announcements(request):
+    from core.models import Announcement
+    from django.db.models import Q as QQ
+    ctx = _base(request)
+    enr = _my_enrollments(request.user).first()
+    groups = list(_my_groups(request.user))
+    cond = QQ(scope="global")
+    if enr:
+        cond |= QQ(scope="faculty", faculty=enr.direction.faculty)
+        cond |= QQ(scope="direction", direction=enr.direction)
+    if groups:
+        cond |= QQ(scope="group", group__in=groups)
+    items = (Announcement.objects.filter(cond)
+             .select_related("author", "faculty", "direction", "group").distinct())
+    ctx.update({"active": "announcements", "items": items})
+    return render(request, "portal/student/announcements.html", ctx)
+
+
+@role_required(Role.STUDENT)
+def messages_center(request):
+    from core.models import Message
+    from django.contrib.auth import get_user_model
+    ctx = _base(request)
+    tab = request.GET.get("tab", "incoming")
+    incoming = (Message.objects.filter(recipient=request.user)
+                .select_related("sender").order_by("-created_at"))
+    if tab == "incoming":
+        incoming.filter(is_read=False).update(is_read=True)
+    sent = (Message.objects.filter(sender=request.user)
+            .select_related("recipient").order_by("-created_at"))
+    # murojaat qilish mumkin: o'z fanlari o'qituvchilari + kurator
+    from teaching.models import TeacherAssignment
+    course_ids = _my_courses_qs(request.user).values_list("id", flat=True)
+    teacher_ids = set(TeacherAssignment.objects.filter(
+        department_course__course_id__in=list(course_ids),
+        status=TeacherAssignment.Status.ACTIVE).values_list("teacher_id", flat=True))
+    for g in _my_groups(request.user):
+        if g.curator_id:
+            teacher_ids.add(g.curator_id)
+    recipients = get_user_model().objects.filter(id__in=teacher_ids)
+    ctx.update({"active": "messages", "tab": tab, "incoming": incoming,
+                "sent": sent, "recipients": recipients})
+    return render(request, "portal/student/messages.html", ctx)
+
+
+@role_required(Role.STUDENT)
+def message_send(request):
+    from core.models import Message
+    from django.contrib.auth import get_user_model
+    from django.urls import reverse
+    from core.notifications import notify
+    recipient = get_object_or_404(get_user_model(), pk=request.POST.get("recipient"))
+    body = (request.POST.get("body") or "").strip()
+    if body:
+        Message.objects.create(sender=request.user, recipient=recipient, body=body)
+        notify(recipient, f"Talabadan xabar: {body[:60]}", reverse("portal:dashboard"))
+        messages.success(request, "Xabar yuborildi.")
+    return redirect("/zamdekan/talaba/xabarlar/?tab=sent")
+
+
+# ==================== Profil (talaba) ====================
+
+@role_required(Role.STUDENT)
+def profile(request):
+    ctx = _base(request)
+    user = request.user
+    if request.method == "POST" and request.POST.get("form") == "info":
+        user.full_name = request.POST.get("full_name", "").strip()
+        user.phone = request.POST.get("phone", "").strip()
+        user.email = request.POST.get("email", "").strip()
+        bd = request.POST.get("birth_date", "").strip()
+        user.birth_date = bd or None
+        user.save()
+        messages.success(request, "Ma‘lumotlar saqlandi.")
+        return redirect("portal:student_profile")
+    if request.method == "POST" and request.POST.get("form") == "password":
+        old = request.POST.get("old_password", "")
+        new = request.POST.get("new_password", "")
+        new2 = request.POST.get("new_password2", "")
+        if not user.check_password(old):
+            messages.error(request, "Joriy parol noto‘g‘ri.")
+        elif len(new) < 6:
+            messages.error(request, "Yangi parol kamida 6 belgidan iborat bo‘lsin.")
+        elif new != new2:
+            messages.error(request, "Yangi parollar mos kelmadi.")
+        else:
+            user.set_password(new); user.save()
+            messages.success(request, "Parol yangilandi. Qayta kiring.")
+            return redirect("accounts:logout")
+    ctx.update({"active": "profile", "user_obj": user,
+                "enrollment": _my_enrollments(request.user).first(),
+                "group": _my_groups(request.user).first()})
+    return render(request, "portal/student/profile.html", ctx)

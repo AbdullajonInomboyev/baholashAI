@@ -232,6 +232,7 @@ class Command(BaseCommand):
         self._seed_rooms()
         self._seed_program()
         self._seed_schedule()
+        self._seed_announcements()
 
     def _seed_assignments(self, assignments):
         """Namunaviy topshiriq + topshirilgan ishlar (o'qituvchi baholashi uchun)."""
@@ -457,3 +458,25 @@ class Command(BaseCommand):
                 room=rooms[i % len(rooms)], timeslot=slot, week_day=day,
                 week_type=Lesson.WeekType.ALL, kind=kind)
             les.groups.add(group)
+
+
+    def _seed_announcements(self):
+        from core.models import Announcement
+        from academics.models import Faculty, Direction, AcademicGroup
+        if Announcement.objects.exists():
+            return
+        fac = Faculty.objects.first()
+        direction = Direction.objects.first()
+        group = AcademicGroup.objects.first()
+        teacher = self.User.objects.filter(username="oqituvchi").first() if hasattr(self, "User") else None
+        Announcement.objects.create(title="Dars jadvali yangilandi",
+            body="Yangi semestr dars jadvali e'lon qilindi. Iltimos, tekshirib chiqing.",
+            scope=Announcement.Scope.GLOBAL)
+        if fac:
+            Announcement.objects.create(title="Fakultet yig'ilishi",
+                body="Payshanba kuni soat 15:00 da fakultet yig'ilishi bo'lib o'tadi.",
+                scope=Announcement.Scope.FACULTY, faculty=fac)
+        if group:
+            Announcement.objects.create(title="Amaliy mashg'ulot ko'chirildi",
+                body="Ertangi amaliy mashg'ulot 3-juftga ko'chirildi.",
+                scope=Announcement.Scope.GROUP, group=group)

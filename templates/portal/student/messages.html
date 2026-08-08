@@ -1,0 +1,36 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}Xabarlar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Xabarlar</h1></div>
+<div class="filters" style="margin-bottom:14px">
+  <a class="chip {% if tab == 'incoming' %}active{% endif %}" href="?tab=incoming">Kelgan</a>
+  <a class="chip {% if tab == 'sent' %}active{% endif %}" href="?tab=sent">Yuborilgan</a>
+  <a class="chip {% if tab == 'compose' %}active{% endif %}" href="?tab=compose">Yangi xabar</a>
+</div>
+{% if tab == 'incoming' %}
+  {% if incoming %}<div class="panel-card">{% for m in incoming %}
+    <div style="padding:12px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;gap:8px;align-items:center"><b>{{ m.sender.full_name|default:m.sender.username }}</b><span class="help">{{ m.created_at|date:"d.m.Y H:i" }}</span></div>
+      <div style="margin-top:5px">{{ m.body }}</div></div>{% endfor %}</div>
+  {% else %}<div class="empty">Xabar yo‘q.</div>{% endif %}
+{% elif tab == 'sent' %}
+  {% if sent %}<div class="panel-card">{% for m in sent %}
+    <div style="padding:12px 0;border-bottom:1px solid var(--line)">
+      <div style="display:flex;gap:8px;align-items:center"><b>→ {{ m.recipient.full_name|default:m.recipient.username }}</b><span class="help">{{ m.created_at|date:"d.m.Y H:i" }}</span></div>
+      <div style="margin-top:5px">{{ m.body }}</div></div>{% endfor %}</div>
+  {% else %}<div class="empty">Hali xabar yubormadingiz.</div>{% endif %}
+{% else %}
+  <div class="panel-card" style="max-width:560px"><h2>O‘qituvchi / kuratorga xabar</h2>
+    {% if recipients %}
+    <form class="stack" method="post" action="{% url 'portal:student_message_send' %}">{% csrf_token %}
+      <label>Qabul qiluvchi</label>
+      <select name="recipient" class="role-switch" required>{% for t in recipients %}<option value="{{ t.pk }}">{{ t.full_name|default:t.username }}</option>{% endfor %}</select>
+      <label style="margin-top:10px">Xabar</label>
+      <textarea name="body" rows="4" required style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px"></textarea>
+      <div style="margin-top:12px"><button class="btn" type="submit">Yuborish</button></div>
+    </form>
+    {% else %}<div class="help">Murojaat qilish uchun o‘qituvchi topilmadi.</div>{% endif %}
+  </div>
+{% endif %}
+{% endblock %}

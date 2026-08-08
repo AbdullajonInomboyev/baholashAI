@@ -132,3 +132,34 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.sender} → {self.recipient}"
+
+
+class Announcement(models.Model):
+    """E'lon — fakultet/yo'nalish/guruh yoki umumiy."""
+    class Scope(models.TextChoices):
+        GLOBAL = "global", "Umumiy"
+        FACULTY = "faculty", "Fakultet"
+        DIRECTION = "direction", "Yo‘nalish"
+        GROUP = "group", "Guruh"
+
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True,
+        related_name="announcements", verbose_name="Muallif")
+    title = models.CharField("Sarlavha", max_length=200)
+    body = models.TextField("Matn")
+    scope = models.CharField("Doira", max_length=12, choices=Scope.choices, default=Scope.GLOBAL)
+    faculty = models.ForeignKey("academics.Faculty", on_delete=models.CASCADE, null=True, blank=True,
+                                related_name="announcements")
+    direction = models.ForeignKey("academics.Direction", on_delete=models.CASCADE, null=True, blank=True,
+                                  related_name="announcements")
+    group = models.ForeignKey("academics.AcademicGroup", on_delete=models.CASCADE, null=True, blank=True,
+                              related_name="announcements")
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "E'lon"
+        verbose_name_plural = "E'lonlar"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title

@@ -31,3 +31,11 @@ from .models import Message
 class MessageAdmin(admin.ModelAdmin):
     list_display = ("sender", "recipient", "created_at")
     search_fields = ("body",)
+
+
+from .models import Announcement
+
+@admin.register(Announcement)
+class AnnouncementAdmin(admin.ModelAdmin):
+    list_display = ("title", "scope", "author", "created_at")
+    list_filter = ("scope",)

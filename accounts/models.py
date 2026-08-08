@@ -20,6 +20,7 @@ class PasswordStatus(models.TextChoices):
 class User(AbstractUser):
     full_name = models.CharField("F.I.Sh.", max_length=255, blank=True)
     phone = models.CharField("Telefon", max_length=30, blank=True)
+    birth_date = models.DateField("Tug‘ilgan sana", null=True, blank=True)
     position = models.CharField("Lavozim", max_length=120, blank=True)
     academic_degree = models.CharField("Ilmiy daraja", max_length=120, blank=True)
     academic_title = models.CharField("Ilmiy unvon", max_length=120, blank=True)
