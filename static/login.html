@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Kirish · O‘quv AI{% endblock %}
+{% block layout %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-body" style="padding:28px 26px">
+      <div class="logo" style="font-weight:800;font-size:22px;color:var(--ink);margin-bottom:2px">O‘quv<span style="color:var(--gold)">AI</span></div>
+      <div class="help" style="margin:0 0 16px">Universitet o‘quv va baholash platformasi</div>
+      <h1>Tizimga kirish</h1>
+      <form method="post">{% csrf_token %}
+        {% if form.errors %}<div class="msg error">Login yoki parol noto‘g‘ri.</div>{% endif %}
+        <label>Login</label>{{ form.username }}
+        <label>Parol</label>{{ form.password }}
+        <button class="btn" type="submit">Kirish</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
