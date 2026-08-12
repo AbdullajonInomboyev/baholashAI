@@ -4,7 +4,7 @@
 {% block content %}
 <div class="page-head"><h1>{{ course.code }} — {{ course.name }}</h1></div>
 
-<div class="panel-card"><h2>Fan haqida</h2>
+<div class="panel-card"><h2>Fan haqida <span class="js-tts" data-tts="{{ course.name }} fani. {% if syllabus and syllabus.objective %}{{ syllabus.objective }}{% endif %}"></span></h2>
   <table class="grid"><tbody>
     <tr><td>Yo‘nalish</td><td>{{ course.curriculum.direction.code }} — {{ course.curriculum.direction.name }}</td></tr>
     <tr><td>O‘quv yili</td><td>{{ course.curriculum.academic_year.title }} · {{ course.curriculum.get_study_form_display }}</td></tr>
@@ -25,11 +25,15 @@
   <div style="margin-bottom:10px">
     <div class="help" style="font-weight:600;margin-bottom:4px">{{ kind }}</div>
     <div style="display:flex;flex-direction:column;gap:4px">
-      {% for l in items %}<div style="display:flex;align-items:center;gap:8px">
+      {% for l in items %}<div style="margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px">
         {% if l.resource.resource_format == 'file' and l.resource.file %}<a href="{{ l.resource.file.url }}">{{ l.resource.title }}</a>
         {% elif l.resource.url %}<a href="{{ l.resource.url }}" target="_blank">{{ l.resource.title }}</a>
         {% else %}<span>{{ l.resource.title }}</span>{% endif %}
         {% if l.topic %}<span class="tag mut">{{ l.topic.title }}</span>{% endif %}
+        {% if l.resource.transcript %}<span class="tag" style="background:#e7f7f0;color:#0a8a5f">📝 matnli izoh</span>{% endif %}
+      </div>
+      {% if l.resource.transcript %}<details style="margin:2px 0 6px 4px"><summary class="help" style="cursor:pointer">Matnli izoh / subtitrni ochish</summary>
+        <div class="transcript-box" data-tts="{{ l.resource.transcript }}">{{ l.resource.transcript|linebreaksbr }}</div></details>{% endif %}
       </div>{% endfor %}
     </div>
   </div>
@@ -39,7 +43,7 @@
 
 <div class="panel-card"><h2>Topshiriqlar</h2>
   {% if assignments %}<table class="grid"><thead><tr><th>Topshiriq</th><th>Muddat</th><th></th></tr></thead><tbody>
-    {% for a in assignments %}<tr><td>{{ a.title }}</td><td>{{ a.due_date|date:"d.m.Y H:i"|default:"—" }}</td>
+    {% for a in assignments %}<tr><td>{{ a.title }}</td><td>{{ a.due_date|date:"d.m.Y"|default:"—" }}</td>
       <td><a class="btn ghost sm" href="{% url 'portal:student_assignment_detail' a.pk %}">Ochish</a></td></tr>{% endfor %}
   </tbody></table>{% else %}<div class="help">Topshiriq yo‘q.</div>{% endif %}
 </div>
@@ -65,3 +69,4 @@
 </div>
 <a class="btn ghost" href="{% url 'portal:student_my_courses' %}">← Mening fanlarim</a>
 {% endblock %}
+<style>.transcript-box{background:var(--surface-2);border-radius:8px;padding:8px 10px;margin-top:4px;font-size:14px}</style>

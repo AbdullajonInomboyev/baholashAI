@@ -7,7 +7,7 @@
 <form method="post" action="{% url 'portal:quiz_take' quiz.pk %}">{% csrf_token %}
   {% for q in questions %}
   <div class="panel-card">
-    <div style="margin-bottom:8px"><b>{{ forloop.counter }}.</b> {{ q.text }} <span class="help">({{ q.points }} ball)</span></div>
+    <div style="margin-bottom:8px"><b>{{ forloop.counter }}.</b> <span data-tts="{{ q.text }}. Variantlar: {% for ch in q.choices.all %}{{ ch.text }}. {% endfor %}">{{ q.text }}</span> <span class="help">({{ q.points }} ball)</span>{% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}</div>
     {% if q.kind == 'short' %}
       <input type="text" name="q{{ q.id }}" placeholder="Javobingiz" style="width:100%;max-width:420px;padding:9px;border:1px solid var(--line);border-radius:8px">
     {% elif q.kind == 'multiple' %}
@@ -20,3 +20,4 @@
   <button class="btn" type="submit">Testni topshirish</button>
 </form>
 {% endblock %}
+<style>.formula-box{display:inline-block;margin:4px 0;font-size:18px}.formula-box math{font-size:1.2em}</style>

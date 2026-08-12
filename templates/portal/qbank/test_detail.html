@@ -1,0 +1,38 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Test banki / {{ bank.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ bank.title }}</h1><div class="spacer"></div>
+  <form class="inline-form" method="post" action="{% url 'portal:qbank_test_delete' bank.pk %}" onsubmit="return confirm('Bank o‘chirilsinmi?')">{% csrf_token %}<button class="btn danger sm" type="submit">O‘chirish</button></form></div>
+
+<div class="panel-card" style="max-width:640px"><h2>📥 Word'dan import</h2>
+  <p class="help">6 ustunli jadval: tr · savol · to‘g‘ri javob · muqobil1 · muqobil2 · muqobil3. Formula (OMML) va rasmlar ham saqlanadi.</p>
+  <form class="inline-form" method="post" enctype="multipart/form-data" action="{% url 'portal:qbank_test_import' bank.pk %}" style="display:flex;gap:8px;align-items:center">{% csrf_token %}
+    <input type="file" name="file" accept=".docx" required><button class="btn sm" type="submit">Import qilish</button></form>
+</div>
+
+{% if questions %}
+<div class="panel-card" style="max-width:640px"><h2>🎯 Bankdan talaba testi</h2>
+  <p class="help">Ushbu bankdagi savollardan talaba ishlaydigan test yaratiladi (variantlar aralashtiriladi). Talabalarga bildirishnoma boradi.</p>
+  <form class="stack" method="post" action="{% url 'portal:qbank_test_to_quiz' bank.pk %}">{% csrf_token %}
+    <div class="row"><div><label>Test nomi</label><input class="inp" type="text" name="title" value="{{ bank.title }}"></div>
+      <div><label>Fan (biriktiruv)</label><select class="inp" name="assignment" required>
+        {% for a in assignments %}<option value="{{ a.pk }}">{{ a.department_course.course.code }} · {{ a.department_course.course.name }}</option>{% endfor %}
+      </select></div></div>
+    <div style="margin-top:12px"><button class="btn" type="submit">Test yaratish</button></div>
+  </form>
+</div>
+{% endif %}
+
+<div class="panel-card"><h2>Savollar ({{ questions|length }})</h2>
+  {% if questions %}<table class="grid"><thead><tr><th>#</th><th>Savol</th><th>To‘g‘ri javob</th><th>Muqobillar</th><th>Formula/Rasm</th></tr></thead><tbody>
+    {% for q in questions %}<tr><td>{{ forloop.counter }}</td>
+      <td>{{ q.raw_text|default:"—"|truncatechars:80 }}{% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}</td>
+      <td><b>{{ q.correct_answer }}</b></td>
+      <td>{{ q.option1 }}{% if q.option2 %}, {{ q.option2 }}{% endif %}{% if q.option3 %}, {{ q.option3 }}{% endif %}</td>
+      <td>{% if q.formula_omml and not q.formula_mathml %}<span class="tag mut">formula</span>{% endif %}{% if q.image %}<span class="tag mut">rasm</span>{% endif %}</td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="empty">Savol yo‘q. Word fayl yuklang.</div>{% endif %}
+</div>
+<a class="btn ghost" href="{% url 'portal:qbank_banks' %}">← Banklar</a>
+{% endblock %}
+<style>.formula-box{display:inline-block;font-size:17px}.formula-box math{font-size:1.15em}</style>

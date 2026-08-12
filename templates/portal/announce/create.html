@@ -1,0 +1,48 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% if nav == 'teacher' %}{% include 'portal/teacher/_nav.html' %}{% elif nav == 'dept' %}{% include 'portal/dept_head/_nav.html' %}{% else %}{% include 'portal/vice_dean/_nav.html' %}{% endif %}{% endblock %}
+{% block crumbs %}E‘lon joylash{% endblock %}
+{% block content %}
+<div class="page-head"><h1>E‘lon joylash</h1></div>
+
+<div class="panel-card" style="max-width:640px"><h2>Yangi e‘lon</h2>
+  <form class="stack" method="post">{% csrf_token %}
+    <label>Sarlavha</label><input class="inp" type="text" name="title" required>
+    <label style="margin-top:8px">Matn</label><textarea class="inp" name="body" rows="4" required></textarea>
+    <div class="row" style="margin-top:8px">
+      <div><label>Doira</label>
+        <select class="inp" name="scope" id="scope" onchange="tgl()">
+          {% if allow_global %}<option value="global">Umumiy (fakultet)</option>{% endif %}
+          {% if allow_faculty %}<option value="faculty">Fakultet</option>{% endif %}
+          <option value="direction">Yo‘nalish</option>
+          <option value="group">Guruh</option>
+        </select></div>
+      <div id="tbox"><label>Nishon</label>
+        <select class="inp" name="target" id="target">
+          <optgroup label="Yo‘nalishlar" class="og-direction">{% for d in directions %}<option data-scope="direction" value="{{ d.pk }}">{{ d.code }} — {{ d.name }}</option>{% endfor %}</optgroup>
+          <optgroup label="Guruhlar" class="og-group">{% for g in groups %}<option data-scope="group" value="{{ g.pk }}">{{ g.name }}</option>{% endfor %}</optgroup>
+        </select></div>
+    </div>
+    <div style="margin-top:12px"><button class="btn" type="submit">Joylash</button></div>
+  </form>
+</div>
+
+<div class="panel-card"><h2>Mening e‘lonlarim</h2>
+  {% if mine %}<table class="grid"><thead><tr><th>Sarlavha</th><th>Doira</th><th>Sana</th><th></th></tr></thead><tbody>
+    {% for a in mine %}<tr><td>{{ a.title }}</td><td>{{ a.get_scope_display }}{% if a.group %}: {{ a.group.name }}{% elif a.direction %}: {{ a.direction.code }}{% endif %}</td>
+      <td>{{ a.created_at|date:"d.m.Y H:i" }}</td>
+      <td><form class="inline-form" method="post" action="{% if nav == 'teacher' %}{% url 'portal:teacher_announce_delete' a.pk %}{% elif nav == 'dept' %}{% url 'portal:dept_announce_delete' a.pk %}{% else %}{% url 'portal:vice_announce_delete' a.pk %}{% endif %}">{% csrf_token %}<button class="btn ghost sm" type="submit">O‘chirish</button></form></td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="help">Hali e‘lon joylamadingiz.</div>{% endif %}
+</div>
+<style>.inp{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px}</style>
+<script>
+function tgl(){
+  var sc=document.getElementById('scope').value;
+  var tbox=document.getElementById('tbox'); var target=document.getElementById('target');
+  if(sc==='direction'||sc==='group'){ tbox.style.display='';
+    for(var o of target.options){ o.hidden = (o.dataset.scope && o.dataset.scope!==sc); }
+    for(var o of target.options){ if(!o.hidden && o.value){ target.value=o.value; break; } }
+  } else { tbox.style.display='none'; }
+}
+tgl();
+</script>
+{% endblock %}

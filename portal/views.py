@@ -588,12 +588,17 @@ def student_edit(request, pk):
         "full_name": student.full_name, "email": student.email, "phone": student.phone,
         "group_name": enrollment.group_name, "status": enrollment.status,
         "direction": enrollment.direction_id, "study_form": enrollment.study_form,
+        "is_disabled": student.is_disabled, "disability_type": student.disability_type,
     }
     form = StudentProfileForm(request.POST or None, initial=initial, faculty=faculty)
     if request.method == "POST" and form.is_valid():
         d = form.cleaned_data
         student.full_name = d["full_name"]; student.email = d["email"]; student.phone = d["phone"]
-        student.save(update_fields=["full_name", "email", "phone"])
+        student.is_disabled = d["is_disabled"]
+        student.disability_type = d["disability_type"] if d["is_disabled"] else ""
+        if d["is_disabled"] and not student.tts_enabled:
+            student.tts_enabled = True  # imkoniyati cheklangan uchun ovoz sukut bo'yicha yoqiladi
+        student.save()
         enrollment.group_name = d["group_name"]; enrollment.status = d["status"]
         enrollment.direction = d["direction"]; enrollment.study_form = d["study_form"]
         enrollment.save()

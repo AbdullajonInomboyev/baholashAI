@@ -192,6 +192,7 @@ class Question(models.Model):
     kind = models.CharField("Turi", max_length=20, choices=Kind.choices, default=Kind.SINGLE)
     points = models.PositiveIntegerField("Ball", default=1)
     correct_text = models.CharField("To‘g‘ri javob (qisqa matn)", max_length=255, blank=True)
+    formula_mathml = models.TextField("Formula (MathML)", blank=True)
     order = models.PositiveIntegerField("Tartib", default=0)
 
     class Meta:

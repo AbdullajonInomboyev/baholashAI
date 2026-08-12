@@ -13,7 +13,7 @@
 {% for q in questions %}
 <div class="panel-card">
   <div style="display:flex;gap:10px"><b>{{ forloop.counter }}.</b><div style="flex:1">
-    <div>{{ q.text }}</div>
+    <div>{{ q.text }}{% if q.formula_mathml %}<span class="formula-box">{{ q.formula_mathml|safe }}</span>{% endif %}</div>
     <div class="help">{{ q.get_kind_display }} · {{ q.points }} ball</div>
     {% if q.kind == 'short' %}<div class="help">To‘g‘ri javob: <b>{{ q.correct_text }}</b></div>
     {% else %}<ul style="margin:6px 0">{% for ch in q.choices.all %}<li>{% if ch.is_correct %}<span class="tag ok">✓</span>{% endif %} {{ ch.text }}</li>{% endfor %}</ul>{% endif %}
@@ -23,6 +23,18 @@
 </div>
 {% endfor %}
 {% else %}<div class="empty">Savol qo‘shing.</div>{% endif %}
+
+<div class="panel-card" style="max-width:640px">
+  <h2>📥 Excel'dan import</h2>
+  <p class="help">Savollarni Excel shablon orqali ommaviy kiriting. Format: Savol · To‘g‘ri javob · Variant 2 · Variant 3 · Variant 4 · Ball. Variantlar avtomatik aralashtiriladi.</p>
+  <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    <a class="btn ghost sm" href="{% url 'portal:quiz_import_template' %}">Shablonni yuklab olish</a>
+    <form class="inline-form" method="post" enctype="multipart/form-data" action="{% url 'portal:quiz_import' quiz.pk %}" style="display:flex;gap:8px;align-items:center">{% csrf_token %}
+      <input type="file" name="file" accept=".xlsx" required>
+      <button class="btn sm" type="submit">Import qilish</button>
+    </form>
+  </div>
+</div>
 
 <div class="panel-card" style="max-width:640px">
   <h2>Savol qo‘shish</h2>
@@ -39,3 +51,4 @@
   </form>
 </div>
 {% endblock %}
+<style>.formula-box{display:inline-block;margin-left:6px;font-size:17px}.formula-box math{font-size:1.15em}</style>

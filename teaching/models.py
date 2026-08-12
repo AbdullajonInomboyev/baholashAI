@@ -94,6 +94,7 @@ class Resource(models.Model):
     file = models.FileField("Fayl", upload_to="resources/", null=True, blank=True)
     url = models.URLField("Havola", blank=True)
     content = models.TextField("Matn (sahifa uchun)", blank=True)
+    transcript = models.TextField("Matnli izoh / subtitr (eshitish imkoniyati cheklanganlar uchun)", blank=True)
     kind = models.CharField("Turi", max_length=20, choices=Kind.choices, default=Kind.OTHER)
     created_at = models.DateTimeField(default=timezone.now)
 

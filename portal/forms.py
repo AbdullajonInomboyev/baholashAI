@@ -119,12 +119,16 @@ class StudentProfileForm(forms.Form):
     status = forms.ChoiceField(label="Holat")
     direction = forms.ModelChoiceField(label="Yo‘nalish", queryset=None)
     study_form = forms.ChoiceField(label="Ta‘lim shakli")
+    is_disabled = forms.BooleanField(label="Imkoniyati cheklangan", required=False)
+    disability_type = forms.ChoiceField(label="Imkoniyat turi", required=False)
 
     def __init__(self, *args, faculty=None, **kwargs):
         from academics.models import Direction, StudentEnrollment, StudyForm
         super().__init__(*args, **kwargs)
         self.fields["status"].choices = StudentEnrollment.Status.choices
         self.fields["study_form"].choices = StudyForm.choices
+        from accounts.models import User as _U
+        self.fields["disability_type"].choices = _U.DisabilityType.choices
         self.fields["direction"].queryset = Direction.objects.filter(faculty=faculty) if faculty else Direction.objects.none()
 
 
@@ -149,6 +153,8 @@ class ResourceUploadForm(forms.Form):
     url = forms.URLField(label="Havola (URL/Video uchun)", required=False)
     content = forms.CharField(label="Matn (sahifa turi uchun)", required=False,
                               widget=forms.Textarea(attrs={"rows": 5}))
+    transcript = forms.CharField(label="Matnli izoh / subtitr (video/audio uchun)", required=False,
+                                 widget=forms.Textarea(attrs={"rows": 3}))
     assignments = forms.MultipleChoiceField(
         label="Qaysi fanlarga biriktirilsin", widget=forms.CheckboxSelectMultiple, required=True)
     topic = forms.ChoiceField(label="Mavzu (ixtiyoriy)", required=False)

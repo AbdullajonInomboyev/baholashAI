@@ -22,6 +22,8 @@
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Hisobotlar</span></a>
 <a href="{% url 'portal:dept_messages' %}" class="{% if active == 'messages' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>Xabarlar</span></a>
+<a href="{% url 'portal:dept_announce' %}" class="{% if active == 'announce' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>E‘lon joylash</span></a>
 <a href="{% url 'portal:dept_profile' %}" class="{% if active == 'profile' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg><span>Profil</span></a>
 <a href="{% url 'portal:dept_resources' %}" class="{% if active == 'resources' %}active{% endif %}">

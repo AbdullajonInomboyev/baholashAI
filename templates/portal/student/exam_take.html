@@ -1,0 +1,19 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ exam.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ exam.title }}</h1></div>
+<div class="help" style="margin-bottom:12px">Fan: {{ exam.teacher_assignment.department_course.course.name }} · Savollar soni: {{ questions|length }}. Har bir savolga javob yozing va yakunда topshiring.</div>
+<form method="post">{% csrf_token %}
+  {% for q in questions %}
+  <div class="panel-card">
+    <div style="margin-bottom:8px"><b>{{ forloop.counter }}.</b> <span data-tts="{{ q.raw_text }}">{{ q.raw_text }}</span>
+      {% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}</div>
+    <textarea class="inp" name="q_{{ q.id }}" rows="4" placeholder="Javobingiz..."></textarea>
+  </div>
+  {% endfor %}
+  <div style="margin:12px 0"><button class="btn" type="submit" onclick="return confirm('Imtihonni topshirasizmi? Qayta o‘zgartirib bo‘lmaydi.')">Topshirish</button>
+    <a class="btn ghost" href="{% url 'portal:student_exams' %}">Bekor qilish</a></div>
+</form>
+<style>.inp{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit}.formula-box{display:inline-block;font-size:18px;margin:4px 0}.formula-box math{font-size:1.2em}</style>
+{% endblock %}

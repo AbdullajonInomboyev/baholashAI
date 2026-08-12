@@ -168,3 +168,76 @@ def quiz_result(request, pk):
            "panel_scope": request.user.full_name or request.user.username,
            "active": "quizzes", "quiz": quiz, "attempt": attempt, "rows": rows}
     return render(request, "portal/quiz/result.html", ctx)
+
+
+# ==================== Test savollari Excel import ====================
+
+@role_required(Role.TEACHER)
+def quiz_import_template(request):
+    from django.http import HttpResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    from io import BytesIO
+    wb = Workbook(); ws = wb.active; ws.title = "Savollar"
+    headers = ["Savol", "To‘g‘ri javob", "Variant 2", "Variant 3", "Variant 4", "Ball"]
+    ws.append(headers)
+    for c in range(1, len(headers) + 1):
+        cell = ws.cell(row=1, column=c)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill("solid", fgColor="3D5EE1")
+    ws.append(["2+2 nechaga teng?", "4", "3", "5", "22", 1])
+    ws.append(["O‘zbekiston poytaxti?", "Toshkent", "Samarqand", "Buxoro", "Namangan", 1])
+    widths = [46, 20, 18, 18, 18, 8]
+    for i, w in enumerate(widths, start=1):
+        ws.column_dimensions[chr(64 + i)].width = w
+    buf = BytesIO(); wb.save(buf)
+    resp = HttpResponse(buf.getvalue(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    resp["Content-Disposition"] = 'attachment; filename="test_savollari_shablon.xlsx"'
+    return resp
+
+
+@role_required(Role.TEACHER)
+def quiz_import(request, pk):
+    from openpyxl import load_workbook
+    quiz = get_object_or_404(_teacher_quizzes(request.user), pk=pk)
+    if request.method != "POST" or not request.FILES.get("file"):
+        return redirect("portal:quiz_manage", pk=pk)
+    try:
+        wb = load_workbook(request.FILES["file"], data_only=True)
+    except Exception:
+        messages.error(request, "Faylni o‘qib bo‘lmadi. Excel (.xlsx) yuklang.")
+        return redirect("portal:quiz_manage", pk=pk)
+    ws = wb.active
+    created = 0
+    skipped = 0
+    order = quiz.questions.count()
+    for i, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+        if not row or not row[0]:
+            continue
+        cells = list(row) + [None] * (6 - len(row))
+        text = str(cells[0]).strip()
+        correct = str(cells[1]).strip() if cells[1] is not None else ""
+        opts = [str(cells[j]).strip() for j in (2, 3, 4) if cells[j] not in (None, "")]
+        if not text or not correct:
+            skipped += 1
+            continue
+        try:
+            points = int(cells[5]) if cells[5] else 1
+        except (ValueError, TypeError):
+            points = 1
+        order += 1
+        q = Question.objects.create(quiz=quiz, text=text, kind=Question.Kind.SINGLE,
+                                    points=points, order=order)
+        # to'g'ri javob + variantlar (tartib aralashtiriladi)
+        import random
+        variants = [(correct, True)] + [(o, False) for o in opts]
+        random.shuffle(variants)
+        for oi, (t, ok) in enumerate(variants, start=1):
+            Choice.objects.create(question=q, text=t, is_correct=ok, order=oi)
+        created += 1
+    if created:
+        messages.success(request, f"{created} ta savol import qilindi." + (f" {skipped} ta satr o‘tkazib yuborildi." if skipped else ""))
+    else:
+        messages.error(request, "Savol topilmadi. Shablon ustunlarini tekshiring.")
+    return redirect("portal:quiz_manage", pk=pk)

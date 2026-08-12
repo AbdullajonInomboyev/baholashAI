@@ -73,3 +73,32 @@ def calendar(request):
     ctx = _base(request)
     ctx.update({"active": "calendar", "upcoming": upcoming, "past": past, "today": today})
     return render(request, "portal/common/calendar.html", ctx)
+
+
+@login_required
+def a11y_save(request):
+    """Moslashuv sozlamalarini saqlash (AJAX)."""
+    from django.http import JsonResponse
+    if request.method != "POST":
+        return JsonResponse({"ok": False}, status=405)
+    u = request.user
+    bool_fields = ["tts_enabled", "high_contrast", "large_font",
+                   "dyslexia_font", "reduce_motion", "reading_guide"]
+    for f in bool_fields:
+        if f in request.POST:
+            setattr(u, f, request.POST.get(f) in ("1", "true", "on", "True"))
+    if "tts_rate" in request.POST:
+        try:
+            rate = float(request.POST.get("tts_rate"))
+            u.tts_rate = min(max(rate, 0.5), 2.0)
+        except (ValueError, TypeError):
+            pass
+    u.save()
+    return JsonResponse({"ok": True})
+
+
+@login_required
+def accessibility_help(request):
+    """Moslashuv imkoniyatlari haqida yordam sahifasi."""
+    return render(request, "portal/a11y_help.html", {
+        "panel_title": "Moslashuv", "panel_scope": request.user.full_name or request.user.username})

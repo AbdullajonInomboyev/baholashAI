@@ -15,9 +15,19 @@ from accounts.models import PasswordStatus, Role, UserRole
 
 User = get_user_model()
 
-HEADERS = ["F.I.Sh.", "Login", "Email", "Telefon", "Yo‘nalish kodi", "Ta‘lim shakli", "Guruh", "Holat"]
+HEADERS = ["F.I.Sh.", "Login", "Email", "Telefon", "Yo‘nalish kodi", "Ta‘lim shakli", "Guruh", "Holat",
+           "Imkoniyati cheklangan", "Imkoniyat turi"]
 FORM_LABELS = {label.lower(): value for value, label in StudyForm.choices}
 STATUS_LABELS = {label.lower(): value for value, label in StudentEnrollment.Status.choices}
+_YES = {"ha", "yes", "1", "+", "true", "bor", "x"}
+
+
+def _disability_type(val):
+    from accounts.models import User as _U
+    if not val:
+        return ""
+    m = {label.lower(): value for value, label in _U.DisabilityType.choices if value}
+    return m.get(str(val).strip().lower(), "")
 
 
 def _styled_header(ws):
@@ -36,7 +46,9 @@ def build_template():
     ws.title = "Talabalar"
     _styled_header(ws)
     ws.append(["Aliyev Vali", "aliyev_vali", "aliyev@namdu.uz", "+998901234567",
-               "60610100", "Kunduzgi", "ATT-25-01", "O‘qimoqda"])
+               "60610100", "Kunduzgi", "ATT-25-01", "O‘qimoqda", "yo‘q", ""])
+    ws.append(["Karimova Dilnoza", "karimova_d", "", "+998907654321",
+               "60610100", "Kunduzgi", "ATT-25-01", "O‘qimoqda", "ha", "Ko‘rish"])
     buffer = BytesIO()
     wb.save(buffer)
     return buffer.getvalue()
@@ -57,6 +69,7 @@ def export_students(academic_year: AcademicYear):
         ws.append([
             e.student.full_name, e.student.username, e.student.email, e.student.phone,
             e.direction.code, e.get_study_form_display(), e.group_name, e.get_status_display(),
+            "ha" if e.student.is_disabled else "yo‘q", e.student.get_disability_type_display() if e.student.is_disabled else "",
         ])
     buffer = BytesIO()
     wb.save(buffer)
@@ -75,7 +88,7 @@ def import_students(academic_year: AcademicYear, file_obj):
     for index, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         if row is None or all(v is None for v in row):
             continue
-        full_name, login, email, phone, dir_code, form, group, status = (list(row) + [None] * 8)[:8]
+        full_name, login, email, phone, dir_code, form, group, status, disabled, dis_type = (list(row) + [None] * 10)[:10]
         if not full_name or not dir_code:
             errors.append(f"{index}-qator: F.I.Sh. yoki yo‘nalish kodi bo‘sh.")
             continue
@@ -85,12 +98,18 @@ def import_students(academic_year: AcademicYear, file_obj):
             continue
 
         username = str(login).strip() if login else _make_login(str(full_name))
+        is_disabled = bool(disabled) and str(disabled).strip().lower() in _YES
+        dtype = _disability_type(dis_type) if is_disabled else ""
         user, is_new = User.objects.get_or_create(
             username=username,
             defaults={"full_name": str(full_name).strip(),
                       "email": (str(email).strip() if email else ""),
                       "phone": (str(phone).strip() if phone else "")},
         )
+        user.is_disabled = is_disabled
+        user.disability_type = dtype
+        if is_disabled:
+            user.tts_enabled = True
         if is_new:
             user.set_password(get_random_string(10))
             user.password_status = PasswordStatus.TEMPORARY
@@ -98,7 +117,7 @@ def import_students(academic_year: AcademicYear, file_obj):
             created += 1
         else:
             user.full_name = str(full_name).strip()
-            user.save(update_fields=["full_name"])
+            user.save(update_fields=["full_name", "is_disabled", "disability_type", "tts_enabled"])
             updated += 1
 
         UserRole.objects.get_or_create(user=user, role=Role.STUDENT)

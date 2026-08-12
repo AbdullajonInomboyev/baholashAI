@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     "core",
     "portal",
     "schedule",
+    "qbank",
 ]
 
 MIDDLEWARE = [

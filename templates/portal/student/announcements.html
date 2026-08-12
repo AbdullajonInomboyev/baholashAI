@@ -11,7 +11,7 @@
     <span class="tag mut">{{ a.get_scope_display }}</span>
     <span class="help" style="margin-left:auto">{{ a.created_at|date:"d.m.Y H:i" }}</span>
   </div>
-  <div style="margin-top:6px">{{ a.body|linebreaksbr }}</div>
+  <div style="margin-top:6px" data-tts="{{ a.title }}. {{ a.body }}">{{ a.body|linebreaksbr }}</div>
   <div class="help" style="margin-top:6px">Muallif: {% if a.author %}{{ a.author.full_name|default:a.author.username }}{% else %}Tizim{% endif %}
     {% if a.group %}· {{ a.group.name }}{% elif a.direction %}· {{ a.direction.code }}{% elif a.faculty %}· {{ a.faculty.name }}{% endif %}</div>
 </div>

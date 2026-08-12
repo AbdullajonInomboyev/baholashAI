@@ -24,6 +24,25 @@ class User(AbstractUser):
     position = models.CharField("Lavozim", max_length=120, blank=True)
     academic_degree = models.CharField("Ilmiy daraja", max_length=120, blank=True)
     academic_title = models.CharField("Ilmiy unvon", max_length=120, blank=True)
+
+    class DisabilityType(models.TextChoices):
+        NONE = "", "Yo‘q"
+        VISION = "vision", "Ko‘rish"
+        HEARING = "hearing", "Eshitish"
+        MOBILITY = "mobility", "Harakat"
+        SPEECH = "speech", "Nutq"
+        OTHER = "other", "Boshqa"
+
+    is_disabled = models.BooleanField("Imkoniyati cheklangan", default=False)
+    disability_type = models.CharField(
+        "Imkoniyat turi", max_length=12, choices=DisabilityType.choices, blank=True)
+    tts_enabled = models.BooleanField("Ovozli o‘qish", default=False)
+    tts_rate = models.DecimalField("Ovoz tezligi", max_digits=3, decimal_places=2, default=0.95)
+    high_contrast = models.BooleanField("Yuqori kontrast", default=False)
+    large_font = models.BooleanField("Katta shrift", default=False)
+    dyslexia_font = models.BooleanField("Disleksiya shrifti", default=False)
+    reduce_motion = models.BooleanField("Harakatni kamaytirish", default=False)
+    reading_guide = models.BooleanField("O‘qish yo‘riqchisi", default=False)
     password_status = models.CharField(
         "Parol holati",
         max_length=20,

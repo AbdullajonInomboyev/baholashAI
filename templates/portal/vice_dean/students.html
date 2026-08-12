@@ -36,7 +36,7 @@
 {% if enrollments %}
 <table class="grid"><thead><tr><th>F.I.Sh.</th><th>Login</th><th>Yo‘nalish</th><th>Shakl</th><th>Guruh</th><th>Holat</th><th></th></tr></thead><tbody>
   {% for e in enrollments %}<tr>
-    <td>{{ e.student.full_name|default:e.student.username }}</td>
+    <td>{{ e.student.full_name|default:e.student.username }}{% if e.student.is_disabled %} <span class="tag" style="background:#eae6fd;color:#6b4ef0" title="Imkoniyati cheklangan{% if e.student.disability_type %}: {{ e.student.get_disability_type_display }}{% endif %}">♿</span>{% endif %}</td>
     <td>{{ e.student.username }}</td>
     <td>{{ e.direction.code }}</td>
     <td>{{ e.get_study_form_display }}</td>

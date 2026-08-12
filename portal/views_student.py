@@ -427,7 +427,62 @@ def profile(request):
             user.set_password(new); user.save()
             messages.success(request, "Parol yangilandi. Qayta kiring.")
             return redirect("accounts:logout")
+    if request.method == "POST" and request.POST.get("form") == "access":
+        user.tts_enabled = bool(request.POST.get("tts_enabled"))
+        user.high_contrast = bool(request.POST.get("high_contrast"))
+        user.large_font = bool(request.POST.get("large_font"))
+        user.save(update_fields=["tts_enabled", "high_contrast", "large_font"])
+        messages.success(request, "Moslashuv sozlamalari saqlandi.")
+        return redirect("portal:student_profile")
     ctx.update({"active": "profile", "user_obj": user,
                 "enrollment": _my_enrollments(request.user).first(),
                 "group": _my_groups(request.user).first()})
     return render(request, "portal/student/profile.html", ctx)
+
+
+# ==================== Yozma imtihonlar (talaba) ====================
+
+@role_required(Role.STUDENT)
+def exams(request):
+    from qbank.models import WrittenExam, WrittenExamSubmission
+    ctx = _base(request)
+    course_ids = _my_courses_qs(request.user).values_list("id", flat=True)
+    open_exams = (WrittenExam.objects.filter(
+        is_open=True, teacher_assignment__department_course__course_id__in=list(course_ids))
+        .select_related("teacher_assignment__department_course__course").distinct())
+    done = dict(WrittenExamSubmission.objects.filter(student=request.user)
+                .values_list("exam_id", "total_score"))
+    done_ids = set(done.keys())
+    rows = [{"exam": e, "done": e.id in done_ids, "score": done.get(e.id)} for e in open_exams]
+    ctx.update({"active": "exams", "rows": rows})
+    return render(request, "portal/student/exams.html", ctx)
+
+
+@role_required(Role.STUDENT)
+def exam_take(request, pk):
+    from qbank.models import WrittenExam, WrittenExamSubmission, WrittenAnswer, Question as BQ
+    course_ids = list(_my_courses_qs(request.user).values_list("id", flat=True))
+    exam = get_object_or_404(
+        WrittenExam, pk=pk, is_open=True,
+        teacher_assignment__department_course__course_id__in=course_ids)
+    existing = WrittenExamSubmission.objects.filter(exam=exam, student=request.user).first()
+    if existing:
+        messages.info(request, "Bu imtihonni allaqachon topshirgansiz.")
+        return redirect("portal:student_exams")
+    questions = list(BQ.objects.filter(group__bank=exam.bank).select_related("group").order_by("group__order", "id"))
+    if request.method == "POST":
+        sub = WrittenExamSubmission.objects.create(exam=exam, student=request.user)
+        for q in questions:
+            WrittenAnswer.objects.create(
+                submission=sub, question=q,
+                answer_text=request.POST.get(f"q_{q.id}", "").strip())
+        from core.notifications import notify
+        from django.urls import reverse
+        if exam.created_by:
+            notify(exam.created_by, f"«{exam.title}» — {request.user.full_name or request.user.username} topshirdi",
+                   reverse("portal:qbank_exam_submissions", args=[exam.pk]))
+        messages.success(request, "Imtihon topshirildi.")
+        return redirect("portal:student_exams")
+    ctx = _base(request)
+    ctx.update({"active": "exams", "exam": exam, "questions": questions})
+    return render(request, "portal/student/exam_take.html", ctx)

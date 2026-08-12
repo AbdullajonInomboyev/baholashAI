@@ -1,0 +1,39 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Yozma bank / {{ bank.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ bank.title }}</h1><div class="spacer"></div>
+  <form class="inline-form" method="post" action="{% url 'portal:qbank_written_delete' bank.pk %}" onsubmit="return confirm('Bank o‘chirilsinmi?')">{% csrf_token %}<button class="btn danger sm" type="submit">O‘chirish</button></form></div>
+
+<div class="panel-card" style="max-width:640px"><h2>📥 Word'dan import</h2>
+  <p class="help">Har jadval — bitta guruh. 1-satr 2-ustun — guruh nomi (mavzu), keyingi satrlar 2-ustun — savollar. Formula va rasmlar saqlanadi.</p>
+  <form class="inline-form" method="post" enctype="multipart/form-data" action="{% url 'portal:qbank_written_import' bank.pk %}" style="display:flex;gap:8px;align-items:center">{% csrf_token %}
+    <input type="file" name="file" accept=".docx" required><button class="btn sm" type="submit">Import qilish</button></form>
+</div>
+
+{% for g in groups %}
+<div class="panel-card"><h2>{{ g.name }} <span class="tag mut">{{ g.questions.count }} savol</span></h2>
+  {% if g.questions.all %}<ol style="margin:0;padding-left:20px">{% for q in g.questions.all %}<li style="margin:6px 0">{{ q.raw_text|default:"[savol]"|truncatechars:120 }}
+    {% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}
+    {% if q.formula_omml and not q.formula_mathml %}<span class="tag mut">formula</span>{% endif %}{% if q.images.count %}<span class="tag mut">{{ q.images.count }} rasm</span>{% endif %}</li>{% endfor %}</ol>
+  {% else %}<div class="help">Savol yo‘q.</div>{% endif %}
+</div>
+{% empty %}<div class="empty">Guruh yo‘q. Word fayl yuklang.</div>{% endfor %}
+
+{% if groups %}
+<div class="panel-card" style="max-width:640px"><h2>📝 Yozma imtihon yaratish</h2>
+  <p class="help">Bu bankdagi savollardan talaba javob yozadigan yozma imtihon tuziladi. Talabalarga e'lon qilinadi.</p>
+  <form class="stack" method="post" action="{% url 'portal:qbank_written_to_exam' bank.pk %}">{% csrf_token %}
+    <div class="row"><div><label>Imtihon nomi</label><input class="inp" type="text" name="title" value="{{ bank.title }}"></div>
+      <div><label>Fan</label><select class="inp" name="assignment" required>{% for a in assignments %}<option value="{{ a.pk }}">{{ a.department_course.course.code }} · {{ a.department_course.course.name }}</option>{% endfor %}</select></div></div>
+    <div style="margin-top:12px"><button class="btn" type="submit">Imtihon yaratish</button></div>
+  </form>
+  {% if exams %}<div style="margin-top:12px"><b>Yaratilgan imtihonlar:</b>
+    {% for e in exams %}<div style="margin-top:5px"><a href="{% url 'portal:qbank_exam_submissions' e.pk %}">{{ e.title }}</a> <span class="tag mut">{{ e.submissions.count }} topshiriq</span></div>{% endfor %}
+  </div>{% endif %}
+</div>
+{% endif %}
+
+<a class="btn ghost" href="{% url 'portal:qbank_banks' %}">← Banklar</a>
+{% endblock %}
+<style>.formula-box{display:inline-block;margin:2px 0 2px 6px;font-size:18px;vertical-align:middle}.formula-box math{font-size:1.15em}</style>

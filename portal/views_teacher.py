@@ -265,7 +265,8 @@ def resource_upload(request):
             uploaded_by=request.user, title=cd["title"], kind=cd["kind"],
             resource_format=cd["resource_format"],
             file=cd.get("file") if cd["resource_format"] == "file" else None,
-            url=cd.get("url", ""), content=cd.get("content", ""))
+            url=cd.get("url", ""), content=cd.get("content", ""),
+            transcript=cd.get("transcript", ""))
         topic_id = cd.get("topic") or None
         for ta_id in cd["assignments"]:
             link_topic_id = None

@@ -6,7 +6,7 @@
 <div class="panel-card">
   <p><strong>Fan:</strong> {{ assignment.teacher_assignment.department_course.course.name }}</p>
   <p><strong>Turi:</strong> {{ assignment.assignment_type.name }} · <strong>Muddat:</strong> {{ assignment.due_date|default:"—" }}</p>
-  {% if assignment.description %}<p>{{ assignment.description }}</p>{% endif %}
+  {% if assignment.description %}<p data-tts="{{ assignment.title }}. {{ assignment.description }}">{{ assignment.description }}</p>{% endif %}
 </div>
 {% if submission %}
 <div class="panel-card">

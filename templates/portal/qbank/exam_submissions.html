@@ -1,0 +1,19 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}{{ exam.title }} — topshiriqlar{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ exam.title }}</h1></div>
+<div class="help" style="margin-bottom:12px">Fan: {{ exam.teacher_assignment.department_course.course.name }} · Savollar: {{ exam.question_count }}</div>
+{% if subs %}
+<table class="grid"><thead><tr><th>Talaba</th><th>Topshirilgan</th><th>Holat</th><th>Ball</th><th></th></tr></thead><tbody>
+  {% for s in subs %}<tr>
+    <td>{{ s.student.full_name|default:s.student.username }}</td>
+    <td>{{ s.submitted_at|date:"d.m.Y H:i" }}</td>
+    <td>{% if s.reviewed %}<span class="tag ok">Baholangan</span>{% else %}<span class="tag warn">Kutilmoqda</span>{% endif %}</td>
+    <td>{% if s.total_score != None %}{{ s.total_score }}{% else %}—{% endif %}</td>
+    <td><a class="btn ghost sm" href="{% url 'portal:qbank_exam_review' s.pk %}">{% if s.reviewed %}Ko‘rish{% else %}Baholash{% endif %}</a></td>
+  </tr>{% endfor %}
+</tbody></table>
+{% else %}<div class="empty">Hali topshiriq yo‘q.</div>{% endif %}
+<a class="btn ghost" href="{% url 'portal:qbank_banks' %}">← Banklar</a>
+{% endblock %}

@@ -212,3 +212,51 @@ form.stack .row>div{flex:1;min-width:190px}
 .btn.gold{background:var(--brand)}.btn.gold:hover{background:var(--brand-d)}
 .help{color:var(--muted);font-size:12.5px}
 .empty{padding:22px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:var(--r-lg)}
+
+/* ============ Moslashuv (inklyuziv) ============ */
+body.a11y-font { font-size: 17.5px; }
+body.a11y-font .side-nav a, body.a11y-font .btn, body.a11y-font table.grid td, body.a11y-font .help { font-size: 1.02em; }
+body.a11y-font h1 { font-size: 1.9rem; }
+
+body.a11y-contrast { --line: #2b2b2b; --muted: #1a1a1a; }
+body.a11y-contrast .panel-card, body.a11y-contrast table.grid { border: 2px solid #111 !important; }
+body.a11y-contrast .help { color: #222 !important; }
+body.a11y-contrast .btn { border: 2px solid #111; }
+body.a11y-contrast table.grid td, body.a11y-contrast table.grid th { border-color: #333 !important; }
+body.a11y-contrast a { text-decoration: underline; }
+
+/* Ovozli o'qish tugmasi */
+.tts-btn { display:inline-flex; align-items:center; gap:5px; cursor:pointer; border:1px solid var(--line);
+  background:#eef2fe; color:#3d5ee1; border-radius:8px; padding:4px 10px; font-size:13px; margin-left:6px; }
+.tts-btn:hover { background:#dfe6fd; }
+.tts-btn.speaking { background:#3d5ee1; color:#fff; }
+
+/* ============ Global moslashuv paneli ============ */
+#a11y-fab{position:fixed;left:18px;bottom:18px;z-index:1000;width:52px;height:52px;border-radius:50%;
+  border:none;background:#3d5ee1;color:#fff;font-size:24px;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.22)}
+#a11y-fab:hover{background:#2f49b8}
+#a11y-panel{position:fixed;left:18px;bottom:80px;z-index:1000;width:270px;background:#fff;border:1px solid var(--line);
+  border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.18);overflow:hidden}
+#a11y-panel .a11y-head{display:flex;align-items:center;justify-content:space-between;background:#3d5ee1;color:#fff;
+  padding:11px 14px;font-weight:700}
+#a11y-panel .a11y-head button{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1}
+#a11y-panel .a11y-body{padding:8px 14px 14px}
+#a11y-panel .a11y-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;
+  border-bottom:1px solid var(--line);font-size:14px}
+#a11y-panel .a11y-item:last-child{border-bottom:none}
+#a11y-panel .a11y-item input[type=checkbox]{width:20px;height:20px;cursor:pointer}
+#a11y-panel .a11y-rate{flex-direction:column;align-items:stretch;gap:4px}
+#a11y-panel .a11y-rate input{width:100%}
+
+/* Disleksiya-do'st shrift: oraliqlar va balandlik oshiriladi */
+body.a11y-dyslexia, body.a11y-dyslexia .side-nav a, body.a11y-dyslexia table.grid td,
+body.a11y-dyslexia p, body.a11y-dyslexia label, body.a11y-dyslexia .help{
+  font-family:"Comic Sans MS","Segoe UI",Verdana,sans-serif !important;
+  letter-spacing:.04em;word-spacing:.14em;line-height:1.85 !important}
+
+/* Harakatni kamaytirish */
+body.a11y-reduce-motion *{animation:none !important;transition:none !important;scroll-behavior:auto !important}
+
+/* O'qish yo'riqchisi (kursorga ergashuvchi chiziq) */
+#a11y-guide{position:fixed;left:0;right:0;height:28px;z-index:998;pointer-events:none;
+  background:rgba(61,94,225,.12);border-top:2px solid rgba(61,94,225,.5);border-bottom:2px solid rgba(61,94,225,.5)}

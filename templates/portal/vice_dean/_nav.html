@@ -35,6 +35,8 @@
 <a href="{% url 'portal:reports' %}" class="{% if active == 'reports' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>
   <span>Hisobotlar</span></a>
+<a href="{% url 'portal:vice_announce' %}" class="{% if active == 'announce' %}active{% endif %}">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg><span>E‘lon joylash</span></a>
 <a href="{% url 'portal:passwords' %}" class="{% if active == 'passwords' %}active{% endif %}">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="15" r="4"/><path d="M10.8 12.2 20 3M17 6l2 2M14 9l2 2"/></svg>
   <span>Parol tiklash</span></a>

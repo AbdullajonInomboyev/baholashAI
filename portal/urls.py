@@ -1,14 +1,18 @@
 from django.urls import path
 
-from . import views, views_common, views_dept, views_quiz, views_student, views_teacher
+from . import views, views_announce, views_common, views_dept, views_qbank, views_quiz, views_student, views_teacher
 
 app_name = "portal"
 
 urlpatterns = [
+    path("a11y/saqlash/", views_common.a11y_save, name="a11y_save"),
+    path("a11y/yordam/", views_common.accessibility_help, name="a11y_help"),
     path("bildirishnomalar/", views_common.notifications, name="notifications"),
     path("bildirishnoma/<int:pk>/", views_common.notification_open, name="notification_open"),
     path("kalendar/", views_common.calendar, name="calendar"),
     path("", views.dashboard, name="dashboard"),
+    path("elonlar-joylash/", views_announce.vice_announce, name="vice_announce"),
+    path("elonlar-joylash/<int:pk>/ochirish/", views_announce.announce_delete_vice, name="vice_announce_delete"),
 
     path("kafedralar/", views.departments, name="departments"),
     path("kafedralar/yangi/", views.department_form, name="department_create"),
@@ -107,6 +111,8 @@ urlpatterns = [
     path("kafedra/dars-jadvali/", views_dept.schedule_view, name="dept_schedule"),
     path("kafedra/hisobotlar/", views_dept.reports, name="dept_reports"),
     path("kafedra/xabarlar/", views_dept.messages_center, name="dept_messages"),
+    path("kafedra/elonlar/", views_announce.dept_announce, name="dept_announce"),
+    path("kafedra/elonlar/<int:pk>/ochirish/", views_announce.announce_delete_dept, name="dept_announce_delete"),
     path("kafedra/profil/", views_dept.profile, name="dept_profile"),
     path("kafedra/xabarlar/yuborish/", views_dept.message_send, name="dept_message_send"),
     path("kafedra/hisobotlar/excel/", views_dept.report_excel, name="dept_report_excel"),
@@ -183,6 +189,22 @@ urlpatterns = [
     path("oqituvchi/testlar/yangi/", views_quiz.quiz_create, name="quiz_create"),
     path("oqituvchi/testlar/<int:pk>/", views_quiz.quiz_manage, name="quiz_manage"),
     path("oqituvchi/testlar/<int:pk>/savol/", views_quiz.quiz_question_add, name="quiz_question_add"),
+    path("oqituvchi/testlar/<int:pk>/import/", views_quiz.quiz_import, name="quiz_import"),
+    path("oqituvchi/testlar/shablon/", views_quiz.quiz_import_template, name="quiz_import_template"),
+    path("oqituvchi/savollar-banki/", views_qbank.banks, name="qbank_banks"),
+    path("oqituvchi/elonlar/", views_announce.teacher_announce, name="teacher_announce"),
+    path("oqituvchi/elonlar/<int:pk>/ochirish/", views_announce.announce_delete_teacher, name="teacher_announce_delete"),
+    path("oqituvchi/savollar-banki/yaratish/", views_qbank.bank_create, name="qbank_create"),
+    path("oqituvchi/savollar-banki/test/<int:pk>/", views_qbank.test_detail, name="qbank_test_detail"),
+    path("oqituvchi/savollar-banki/test/<int:pk>/import/", views_qbank.test_import, name="qbank_test_import"),
+    path("oqituvchi/savollar-banki/test/<int:pk>/ochirish/", views_qbank.test_delete, name="qbank_test_delete"),
+    path("oqituvchi/savollar-banki/test/<int:pk>/test-yaratish/", views_qbank.test_to_quiz, name="qbank_test_to_quiz"),
+    path("oqituvchi/savollar-banki/yozma/<int:pk>/", views_qbank.written_detail, name="qbank_written_detail"),
+    path("oqituvchi/savollar-banki/yozma/<int:pk>/import/", views_qbank.written_import, name="qbank_written_import"),
+    path("oqituvchi/savollar-banki/yozma/<int:pk>/ochirish/", views_qbank.written_delete, name="qbank_written_delete"),
+    path("oqituvchi/savollar-banki/yozma/<int:pk>/imtihon/", views_qbank.written_to_exam, name="qbank_written_to_exam"),
+    path("oqituvchi/imtihon/<int:pk>/topshiriqlar/", views_qbank.exam_submissions, name="qbank_exam_submissions"),
+    path("oqituvchi/imtihon-topshirig/<int:pk>/baholash/", views_qbank.exam_review, name="qbank_exam_review"),
     path("oqituvchi/savol/<int:pk>/ochirish/", views_quiz.quiz_question_delete, name="quiz_question_delete"),
     path("oqituvchi/testlar/<int:pk>/holat/", views_quiz.quiz_toggle, name="quiz_toggle"),
     path("oqituvchi/testlar/<int:pk>/natijalar/", views_quiz.quiz_results, name="quiz_results"),
@@ -191,4 +213,6 @@ urlpatterns = [
     path("talaba/testlar/", views_quiz.student_quizzes, name="student_quizzes"),
     path("talaba/testlar/<int:pk>/ishlash/", views_quiz.quiz_take, name="quiz_take"),
     path("talaba/testlar/<int:pk>/natija/", views_quiz.quiz_result, name="quiz_result"),
+    path("talaba/imtihonlar/", views_student.exams, name="student_exams"),
+    path("talaba/imtihonlar/<int:pk>/ishlash/", views_student.exam_take, name="student_exam_take"),
 ]

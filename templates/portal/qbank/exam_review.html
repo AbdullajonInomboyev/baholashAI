@@ -1,0 +1,22 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Baholash{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ sub.exam.title }}</h1><div class="spacer"></div><span class="help">{{ sub.student.full_name|default:sub.student.username }}</span></div>
+<form method="post">{% csrf_token %}
+  {% for a in answers %}
+  <div class="panel-card">
+    <div style="margin-bottom:6px"><b>{{ forloop.counter }}.</b> {{ a.question.raw_text }}
+      {% if a.question.formula_mathml %}<div class="formula-box">{{ a.question.formula_mathml|safe }}</div>{% endif %}</div>
+    <div style="background:var(--surface-2);border-radius:8px;padding:10px;margin-bottom:8px">{{ a.answer_text|linebreaksbr|default:"— (bo‘sh)" }}</div>
+    <div class="row">
+      <div style="max-width:120px"><label>Ball</label><input class="inp" type="number" step="0.5" name="score_{{ a.pk }}" value="{{ a.score|default_if_none:'' }}"></div>
+      <div><label>Izoh</label><input class="inp" type="text" name="fb_{{ a.pk }}" value="{{ a.feedback }}"></div>
+    </div>
+  </div>
+  {% endfor %}
+  <div style="margin:12px 0"><button class="btn" type="submit">Baholashni saqlash</button>
+    <a class="btn ghost" href="{% url 'portal:qbank_exam_submissions' sub.exam.pk %}">Orqaga</a></div>
+</form>
+<style>.inp{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px}.formula-box{display:inline-block;font-size:17px}.formula-box math{font-size:1.15em}</style>
+{% endblock %}

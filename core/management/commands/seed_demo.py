@@ -185,10 +185,14 @@ class Command(BaseCommand):
             res.approval_status = st
             res.review_note = note
             res.dept_status = dept_states[idx % len(dept_states)]
+            if idx == 0:
+                res.transcript = ("Ushbu video darsning matnli izohi: mavzu bo'yicha asosiy "
+                                  "tushunchalar, ta'riflar va misollar batafsil yoritilgan.")
             if res.dept_status == Resource.DeptStatus.RETURNED:
                 res.dept_note = "Mavzu qamrovini kengaytiring."
-            res.save(update_fields=["approval_status", "review_note", "dept_status", "dept_note"])
+            res.save(update_fields=["approval_status", "review_note", "dept_status", "dept_note", "transcript"])
 
+        # namunaviy: imkoniyati cheklangan talaba (ko'rish) — ovoz yoqilgan
         # bir nechta talaba
         for i in range(1, 4):
             username = f"talaba{i}"
@@ -216,6 +220,14 @@ class Command(BaseCommand):
         for enr in StudentEnrollment.objects.filter(direction=direction, group__isnull=True):
             enr.group = group
             enr.save(update_fields=["group"])
+
+        # namunaviy: imkoniyati cheklangan talaba (ko'rish) — ovoz yoqilgan
+        first_student = User.objects.filter(username="talaba1").first()
+        if first_student:
+            first_student.is_disabled = True
+            first_student.disability_type = "vision"
+            first_student.tts_enabled = True
+            first_student.save(update_fields=["is_disabled", "disability_type", "tts_enabled"])
 
         # zam dekandan mudirga namunaviy izoh
         from core.models import ReviewRemark

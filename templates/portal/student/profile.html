@@ -38,4 +38,17 @@
   </div>
 </div>
 <style>.inp{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px}</style>
+
+<div class="panel-card" style="margin-top:16px">
+  <h2>♿ Moslashuv imkoniyatlari</h2>
+  <p class="help">Imkoniyati cheklangan talabalar uchun: ovozli o‘qish, yuqori kontrast va katta shrift. Sozlamalar barcha sahifalarga qo‘llanadi.</p>
+  {% if user_obj.is_disabled %}<div class="help" style="margin-bottom:8px">Holat: <b>Imkoniyati cheklangan{% if user_obj.disability_type %} — {{ user_obj.get_disability_type_display }}{% endif %}</b></div>{% endif %}
+  <form method="post">{% csrf_token %}<input type="hidden" name="form" value="access">
+    <label class="a11y-row"><input type="checkbox" name="tts_enabled" {% if user_obj.tts_enabled %}checked{% endif %}> 🔊 Ovozli o‘qish (matnlarni tinglash tugmasi)</label>
+    <label class="a11y-row"><input type="checkbox" name="high_contrast" {% if user_obj.high_contrast %}checked{% endif %}> ◐ Yuqori kontrast</label>
+    <label class="a11y-row"><input type="checkbox" name="large_font" {% if user_obj.large_font %}checked{% endif %}> 🔠 Katta shrift</label>
+    <div style="margin-top:12px"><button class="btn" type="submit">Saqlash</button></div>
+  </form>
+</div>
+<style>.a11y-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:15px}.a11y-row input{width:18px;height:18px}</style>
 {% endblock %}

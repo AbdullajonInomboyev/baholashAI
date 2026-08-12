@@ -10,7 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body class="panel">
+<body class="panel{% if user.is_authenticated %}{% if user.high_contrast %} a11y-contrast{% endif %}{% if user.large_font %} a11y-font{% endif %}{% if user.dyslexia_font %} a11y-dyslexia{% endif %}{% if user.reduce_motion %} a11y-reduce-motion{% endif %}{% endif %}">
+{% if user.is_authenticated %}<div id="a11y-tts" data-enabled="{% if user.tts_enabled %}1{% else %}0{% endif %}" data-rate="{{ user.tts_rate }}"></div>{% endif %}
   <aside class="side">
     <a class="brand" href="{% url 'core:dashboard' %}"><span class="dot"></span>O‘quv<span style="color:var(--brand)">AI</span></a>
     <div class="side-scope">{{ panel_scope }}</div>
@@ -42,5 +43,97 @@
       {% block content %}{% endblock %}
     </main>
   </div>
+{% if user.is_authenticated and user.tts_enabled %}
+<script>
+(function(){
+  if(!('speechSynthesis' in window)) return;
+  var synth = window.speechSynthesis;
+  function pickVoice(u){
+    var vs = synth.getVoices() || [];
+    var uz = vs.find(function(v){return /uz/i.test(v.lang) || /uzbek/i.test(v.name);});
+    u.lang = uz ? uz.lang : 'ru-RU';
+    if(uz) u.voice = uz;
+  }
+  function speak(text, btn){
+    if(!text) return;
+    if(synth.speaking){ synth.cancel();
+      document.querySelectorAll('.tts-btn.speaking').forEach(function(b){b.classList.remove('speaking');});
+      if(btn && btn.classList.contains('speaking')){ btn.classList.remove('speaking'); return; }
+    }
+    var box0 = document.getElementById('a11y-tts');
+    var rate = box0 ? parseFloat(box0.dataset.rate || '0.95') : 0.95;
+    var u = new SpeechSynthesisUtterance(text); pickVoice(u); u.rate = (rate || 0.95);
+    if(btn){ btn.classList.add('speaking'); u.onend=function(){btn.classList.remove('speaking');}; u.onerror=function(){btn.classList.remove('speaking');}; }
+    synth.speak(u);
+  }
+  function ready(){
+    document.querySelectorAll('[data-tts], .js-tts').forEach(function(el){
+      if(el.__ttsDone) return; el.__ttsDone = true;
+      var txt = el.getAttribute('data-tts') || el.innerText;
+      var b = document.createElement('button');
+      b.type='button'; b.className='tts-btn'; b.innerHTML='🔊 Tinglash';
+      b.addEventListener('click', function(e){ e.preventDefault(); speak(txt, b); });
+      el.appendChild(b);
+    });
+    var fab = document.createElement('button');
+    fab.type='button'; fab.className='tts-btn';
+    fab.style.cssText='position:fixed;right:18px;bottom:18px;z-index:999;padding:10px 14px;box-shadow:0 4px 14px rgba(0,0,0,.15)';
+    fab.innerHTML='🔊 Sahifani o‘qish';
+    fab.addEventListener('click', function(){
+      var main = document.querySelector('main.content') || document.body;
+      speak(main.innerText.slice(0, 4000), fab);
+    });
+    document.body.appendChild(fab);
+  }
+  if(synth.getVoices().length){ ready(); } else { synth.onvoiceschanged = function(){ if(!window.__ttsInit){window.__ttsInit=true; ready();} }; setTimeout(function(){ if(!window.__ttsInit){window.__ttsInit=true; ready();} }, 800); }
+})();
+</script>
+{% endif %}
+{% if user.is_authenticated %}
+<button id="a11y-fab" type="button" aria-label="Moslashuv imkoniyatlari" title="Moslashuv imkoniyatlari">♿</button>
+<div id="a11y-panel" role="dialog" aria-label="Moslashuv paneli" hidden>
+  <div class="a11y-head">♿ Moslashuv <button type="button" id="a11y-close" aria-label="Yopish">×</button></div>
+  <div class="a11y-body">
+    <label class="a11y-item"><span>🔊 Ovozli o‘qish</span><input type="checkbox" data-pref="tts_enabled" {% if user.tts_enabled %}checked{% endif %}></label>
+    <div class="a11y-item a11y-rate"><span>⏩ Ovoz tezligi</span><input type="range" min="0.6" max="1.6" step="0.1" value="{{ user.tts_rate }}" data-pref="tts_rate"></div>
+    <label class="a11y-item"><span>🔠 Katta shrift</span><input type="checkbox" data-pref="large_font" {% if user.large_font %}checked{% endif %}></label>
+    <label class="a11y-item"><span>◐ Yuqori kontrast</span><input type="checkbox" data-pref="high_contrast" {% if user.high_contrast %}checked{% endif %}></label>
+    <label class="a11y-item"><span>🔤 Disleksiya shrifti</span><input type="checkbox" data-pref="dyslexia_font" {% if user.dyslexia_font %}checked{% endif %}></label>
+    <label class="a11y-item"><span>🎚 Harakatni kamaytirish</span><input type="checkbox" data-pref="reduce_motion" {% if user.reduce_motion %}checked{% endif %}></label>
+    <label class="a11y-item"><span>📏 O‘qish yo‘riqchisi</span><input type="checkbox" data-pref="reading_guide" {% if user.reading_guide %}checked{% endif %}></label>
+    <a class="a11y-item" href="{% url 'portal:a11y_help' %}" style="color:#3d5ee1;text-decoration:none"><span>ℹ️ Batafsil yordam</span><span>›</span></a>
+  </div>
+</div>
+<div id="a11y-guide" {% if not user.reading_guide %}hidden{% endif %}></div>
+<script>
+(function(){
+  var CSRF="{{ csrf_token }}";
+  var fab=document.getElementById('a11y-fab'), panel=document.getElementById('a11y-panel'),
+      body=document.body, guide=document.getElementById('a11y-guide');
+  fab.addEventListener('click', function(){ panel.hidden=!panel.hidden; });
+  document.getElementById('a11y-close').addEventListener('click', function(){ panel.hidden=true; });
+  function save(pref, val){
+    var fd=new FormData(); fd.append(pref, val); fd.append('csrfmiddlewaretoken', CSRF);
+    fetch("{% url 'portal:a11y_save' %}", {method:'POST', body:fd, headers:{'X-CSRFToken':CSRF}}).catch(function(){});
+  }
+  var cls={large_font:'a11y-font', high_contrast:'a11y-contrast', dyslexia_font:'a11y-dyslexia', reduce_motion:'a11y-reduce-motion'};
+  panel.querySelectorAll('[data-pref]').forEach(function(el){
+    var pref=el.dataset.pref;
+    if(el.type==='checkbox'){
+      el.addEventListener('change', function(){
+        if(cls[pref]) body.classList.toggle(cls[pref], el.checked);
+        if(pref==='reading_guide'){ guide.hidden=!el.checked; }
+        if(pref==='tts_enabled'){ var t=document.getElementById('a11y-tts'); if(t){t.dataset.enabled=el.checked?'1':'0';} location.reload(); }
+        save(pref, el.checked?'1':'0');
+      });
+    } else if(el.type==='range'){
+      el.addEventListener('change', function(){ var t=document.getElementById('a11y-tts'); if(t){t.dataset.rate=el.value;} save('tts_rate', el.value); });
+    }
+  });
+  // o'qish yo'riqchisi
+  document.addEventListener('mousemove', function(e){ if(!guide.hidden){ guide.style.top=(e.clientY-14)+'px'; } });
+})();
+</script>
+{% endif %}
 </body>
 </html>
