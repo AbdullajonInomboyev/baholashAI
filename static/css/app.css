@@ -66,6 +66,8 @@ body.panel{display:grid;grid-template-columns:252px 1fr;min-height:100vh}
   border-radius:var(--r-sm);padding:8px 10px;font-size:13px}
 
 .main-col{display:flex;flex-direction:column;min-width:0}
+#nav-overlay{display:none}
+.table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
 .topstrip{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
   padding:12px 26px;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .crumbs{font-family:var(--font-head);font-weight:700;color:var(--ink);font-size:15px}
@@ -89,7 +91,6 @@ body.panel{display:grid;grid-template-columns:252px 1fr;min-height:100vh}
 .cards .card:nth-child(6n+4){border-top-color:#0aa5e9}
 .cards .card:nth-child(6n+5){border-top-color:#7b61ff}
 .cards .card:nth-child(6n+6){border-top-color:#e8476a}
-  padding:16px 18px;box-shadow:var(--sh-sm);transition:transform .12s,box-shadow .12s}
 .card:hover{transform:translateY(-2px);box-shadow:var(--sh)}
 .card .n{font-family:var(--font-head);font-size:27px;font-weight:800;color:var(--ink);line-height:1.1}
 .card .k{font-size:12.5px;color:var(--muted);margin-top:4px}
@@ -184,16 +185,75 @@ form.stack .row>div{flex:1;min-width:190px}
 .crumbline{font-size:13px;color:var(--muted);margin-bottom:12px}
 .crumbline b{color:var(--ink)}
 
-/* responsive */
-@media(max-width:960px){
+/* ============ RESPONSIVE ============ */
+
+/* Planshet va kichikroq: yon menyu suriladigan drawerga aylanadi */
+@media (max-width: 1024px){
   body.panel{grid-template-columns:1fr}
-  .side{position:fixed;left:0;top:0;width:250px;transform:translateX(-100%);transition:transform .2s}
-  body.nav-open .side{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.3)}
-  body.nav-open::after{content:"";position:fixed;inset:0;background:rgba(10,15,25,.4);z-index:25}
+  .side{position:fixed;left:0;top:0;width:280px;max-width:84vw;height:100vh;
+    transform:translateX(-100%);transition:transform .25s ease;z-index:60;box-shadow:none}
+  body.nav-open .side{transform:translateX(0);box-shadow:0 0 50px rgba(10,15,25,.35)}
+  #nav-overlay{position:fixed;inset:0;background:rgba(10,15,25,.45);z-index:55;display:block;
+    opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+  body.nav-open #nav-overlay{opacity:1;visibility:visible}
   .hamb{display:block}
   .split{grid-template-columns:1fr}
   .tree{position:static;max-height:none}
-  .content{padding:20px 16px}
+  .content{padding:22px 20px}
+}
+
+/* Mobil */
+@media (max-width: 640px){
+  .content{padding:14px 13px}
+  .topstrip{gap:9px;padding:10px 13px}
+  .crumbs{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:40vw}
+  .who{display:none}
+  .role-switch{max-width:118px;padding:6px 8px;font-size:12.5px}
+  .logout{font-size:13px;font-weight:600}
+  .page-head{flex-wrap:wrap;gap:10px;margin-bottom:16px}
+  .page-head h1{font-size:19px}
+  .page-head .spacer{display:none}
+
+  .cards{grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:11px;margin-bottom:16px}
+  .card{padding:14px 15px}
+  .card .n{font-size:22px}
+  .panel-card{padding:15px 15px;border-radius:14px;margin-bottom:16px}
+  .panel-card h2{font-size:14.5px}
+
+  /* jadval: tabiiy kenglikda, gorizontal suriladi (siqilmaydi) */
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px;
+    box-shadow:var(--sh-sm);margin-bottom:16px;position:relative}
+  .table-scroll table.grid{margin:0;box-shadow:none;border-radius:0;min-width:max-content}
+  table.grid th,table.grid td{padding:9px 12px;font-size:13px}
+
+  /* forma qatorlari ustma-ust */
+  form.stack input,form.stack select,form.stack textarea{max-width:100%}
+  form.stack .row{gap:0}
+  form.stack .row>div{min-width:100%;margin-bottom:2px}
+
+  /* teginish maydonlari kattaroq */
+  .btn{min-height:44px;padding:11px 16px}
+  .btn.sm{min-height:36px;padding:7px 12px}
+  .chip{padding:9px 15px}
+  .side-nav a{padding:12px 12px}
+  /* iOS'da inputga bosilganda zoom bo'lmasligi uchun */
+  input,select,textarea{font-size:16px}
+
+  /* moslashuv paneli mobilда to'liq kenglik */
+  #a11y-fab{width:46px;height:46px;font-size:21px;left:13px;bottom:13px}
+  #a11y-panel{left:10px;right:10px;bottom:70px;width:auto}
+
+  .filterbar{gap:8px}
+  .filterbar select,.filterbar input{flex:1;min-width:130px}
+  /* ikki ustunli inline gridlar mobilда ustma-ust */
+  .chart-row,.two-col{grid-template-columns:1fr !important}
+}
+
+/* Juda kichik ekran */
+@media (max-width: 380px){
+  .cards{grid-template-columns:1fr 1fr}
+  .crumbs{max-width:32vw}
+  .role-switch{max-width:96px}
 }
 
 /* ikki ustun: ichma-ich (yil>yo'nalish>semestr) */

@@ -12,6 +12,7 @@
 </head>
 <body class="panel{% if user.is_authenticated %}{% if user.high_contrast %} a11y-contrast{% endif %}{% if user.large_font %} a11y-font{% endif %}{% if user.dyslexia_font %} a11y-dyslexia{% endif %}{% if user.reduce_motion %} a11y-reduce-motion{% endif %}{% endif %}">
 {% if user.is_authenticated %}<div id="a11y-tts" data-enabled="{% if user.tts_enabled %}1{% else %}0{% endif %}" data-rate="{{ user.tts_rate }}"></div>{% endif %}
+  <div id="nav-overlay" onclick="document.body.classList.remove('nav-open')"></div>
   <aside class="side">
     <a class="brand" href="{% url 'core:dashboard' %}"><span class="dot"></span>O‘quv<span style="color:var(--brand)">AI</span></a>
     <div class="side-scope">{{ panel_scope }}</div>
@@ -135,5 +136,26 @@
 })();
 </script>
 {% endif %}
+<script>
+(function(){
+  // Keng jadvallarni gorizontal suriluvchi konteynerga o'rash (mobil uchun)
+  document.querySelectorAll('main.content table.grid').forEach(function(t){
+    if(t.classList.contains('schedule-grid')) return;
+    var p=t.parentElement;
+    if(p && p.classList.contains('table-scroll')) return;
+    if(p && (p.style.overflowX==='auto' || p.style.overflowX==='scroll')) return;
+    var w=document.createElement('div'); w.className='table-scroll';
+    t.parentNode.insertBefore(w, t); w.appendChild(t);
+  });
+  // Drawer: menyu havolasi bosilganда yopiladi
+  document.querySelectorAll('.side-nav a').forEach(function(a){
+    a.addEventListener('click', function(){ document.body.classList.remove('nav-open'); });
+  });
+  // Escape bilan yopish
+  document.addEventListener('keydown', function(e){
+    if(e.key==='Escape') document.body.classList.remove('nav-open');
+  });
+})();
+</script>
 </body>
 </html>
