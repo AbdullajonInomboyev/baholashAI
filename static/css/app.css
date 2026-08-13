@@ -49,6 +49,10 @@ a:hover{text-decoration:underline}
 
 /* ============ Panel ============ */
 body.panel{display:grid;grid-template-columns:252px 1fr;min-height:100vh}
+@media (min-width:1025px){
+  body.panel>.side{grid-column:1;grid-row:1}
+  body.panel>.main-col{grid-column:2;grid-row:1}
+}
 .side{background:#fff;color:#55606f;border-right:1px solid var(--line);
   display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:30}
 .side .brand{color:var(--ink);font-size:21px;font-weight:800;padding:20px 22px 4px;display:flex;align-items:center;gap:8px}
@@ -67,7 +71,10 @@ body.panel{display:grid;grid-template-columns:252px 1fr;min-height:100vh}
 
 .main-col{display:flex;flex-direction:column;min-width:0}
 #nav-overlay{display:none}
+#a11y-tts{display:none}
 .table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* grid/flex bolalari kontentдан kengaymasligi uchun (jadval ichда surilsin) */
+.panel-card,.chart-row>*,.two-col>*,.split>*{min-width:0}
 .topstrip{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
   padding:12px 26px;background:rgba(255,255,255,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .crumbs{font-family:var(--font-head);font-weight:700;color:var(--ink);font-size:15px}
