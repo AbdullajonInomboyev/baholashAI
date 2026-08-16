@@ -117,3 +117,67 @@ class UserRole(models.Model):
     def __str__(self):
         scope = self.department or self.faculty
         return f"{self.user} — {self.get_role_display()}" + (f" ({scope})" if scope else "")
+
+
+class StudentProfile(models.Model):
+    """Talabaning to‘liq HEMIS ma'lumotlari (pasport/akademik/ijtimoiy)."""
+
+    class Gender(models.TextChoices):
+        MALE = "male", "Erkak"
+        FEMALE = "female", "Ayol"
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="student_profile", verbose_name="Talaba")
+
+    # Identifikatsiya
+    student_id = models.CharField("Talaba ID", max_length=32, blank=True, db_index=True)
+    pinfl = models.CharField("JSHSHIR (PINFL)", max_length=20, blank=True, db_index=True)
+    passport_number = models.CharField("Pasport raqami", max_length=20, blank=True)
+    passport_issued = models.DateField("Pasport berilgan sana", null=True, blank=True)
+    gender = models.CharField("Jins", max_length=6, choices=Gender.choices, blank=True)
+
+    # Fuqarolik / hudud
+    citizenship = models.CharField("Fuqarolik", max_length=120, blank=True)
+    country = models.CharField("Davlat", max_length=80, blank=True)
+    nationality = models.CharField("Millat", max_length=80, blank=True)
+    region = models.CharField("Viloyat", max_length=120, blank=True)
+    district = models.CharField("Tuman", max_length=120, blank=True)
+
+    # Akademik
+    course = models.CharField("Kurs", max_length=20, blank=True)
+    faculty_name = models.CharField("Fakultet", max_length=255, blank=True)
+    group_name = models.CharField("Guruh", max_length=50, blank=True)
+    education_language = models.CharField("Ta'lim tili", max_length=40, blank=True)
+    academic_year = models.CharField("O‘quv yili", max_length=20, blank=True)
+    semester = models.CharField("Semestr", max_length=20, blank=True)
+    is_graduating = models.BooleanField("Bitiruvchi", default=False)
+    specialty_code = models.CharField("Mutaxassislik kodi", max_length=40, blank=True)
+    education_type = models.CharField("Ta'lim turi", max_length=40, blank=True)   # Bakalavr/Magistr
+    education_form = models.CharField("Ta'lim shakli", max_length=40, blank=True)  # Kunduzgi/Sirtqi
+
+    # Moliya / toifa
+    payment_form = models.CharField("To‘lov shakli", max_length=60, blank=True)
+    grant_type = models.CharField("Grant turi", max_length=60, blank=True)
+    previous_education = models.TextField("Avvalgi ta'lim ma'lumoti", blank=True)
+    student_category = models.CharField("Talaba toifasi", max_length=60, blank=True)
+    social_category = models.CharField("Ijtimoiy toifa", max_length=60, blank=True)
+    cohabitants_count = models.PositiveIntegerField("Birga yashaydiganlar soni", null=True, blank=True)
+    cohabitants_category = models.CharField("Birga yashaydiganlar toifasi", max_length=80, blank=True)
+    residence_status = models.CharField("Yashash joyi statusi", max_length=80, blank=True)
+    residence_geo = models.CharField("Yashash joyi geolokatsiyasi", max_length=120, blank=True)
+
+    # Hujjat / natija
+    order_info = models.CharField("Buyruq", max_length=120, blank=True)
+    gpa = models.DecimalField("GPA", max_digits=4, decimal_places=2, null=True, blank=True)
+    contract_number = models.CharField("Kontrakt №", max_length=60, blank=True)
+    contract_type = models.CharField("Shartnoma turi", max_length=80, blank=True)
+
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Talaba ma'lumoti (HEMIS)"
+        verbose_name_plural = "Talaba ma'lumotlari (HEMIS)"
+
+    def __str__(self):
+        return f"{self.user.full_name or self.user.username} — {self.student_id or self.pinfl}"

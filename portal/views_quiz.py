@@ -133,8 +133,8 @@ def quiz_take(request, pk):
         return redirect("portal:quiz_result", pk=quiz.pk)
 
     questions = list(quiz.questions.prefetch_related("choices"))
+    attempt, _ = QuizAttempt.objects.get_or_create(quiz=quiz, student=request.user)
     if request.method == "POST":
-        attempt, _ = QuizAttempt.objects.get_or_create(quiz=quiz, student=request.user)
         attempt.answers.all().delete()
         for q in questions:
             ans = QuizAnswer.objects.create(attempt=attempt, question=q)
@@ -149,10 +149,56 @@ def quiz_take(request, pk):
         messages.success(request, "Test topshirildi va avtomatik baholandi.")
         return redirect("portal:quiz_result", pk=quiz.pk)
 
+    # Saqlangan (qoralama) javoblarni yuklaymiz — sahifa yangilansa tiklanadi
+    saved = {a.question_id: a for a in attempt.answers.prefetch_related("selected")}
+    answered = 0
+    for q in questions:
+        a = saved.get(q.id)
+        q.saved_ids = [c.id for c in a.selected.all()] if a else []
+        q.saved_text = a.text_answer if a else ""
+        if q.saved_ids or q.saved_text:
+            answered += 1
+
     ctx = {"panel_title": "Talaba paneli",
            "panel_scope": request.user.full_name or request.user.username,
-           "active": "quizzes", "quiz": quiz, "questions": questions}
+           "active": "quizzes", "quiz": quiz, "questions": questions,
+           "answered": answered, "total": len(questions)}
     return render(request, "portal/quiz/take.html", ctx)
+
+
+@role_required(Role.STUDENT)
+def quiz_autosave(request, pk):
+    """Bitta savol javobini AJAX orqali qoralama urinishga saqlaydi (avtomatik saqlash)."""
+    from django.http import JsonResponse
+    quiz = get_object_or_404(_visible_quizzes(request.user), pk=pk)
+    if request.method != "POST":
+        return JsonResponse({"ok": False}, status=405)
+    # allaqachon topshirilgan bo'lsa — o'zgartirmaymiz
+    if QuizAttempt.objects.filter(quiz=quiz, student=request.user,
+                                  submitted_at__isnull=False).exists():
+        return JsonResponse({"ok": False, "submitted": True}, status=409)
+    try:
+        qid = int(request.POST.get("question"))
+    except (TypeError, ValueError):
+        return JsonResponse({"ok": False}, status=400)
+    q = quiz.questions.filter(pk=qid).first()
+    if not q:
+        return JsonResponse({"ok": False}, status=404)
+    attempt, _ = QuizAttempt.objects.get_or_create(quiz=quiz, student=request.user)
+    ans, _ = QuizAnswer.objects.get_or_create(attempt=attempt, question=q)
+    if q.kind == Question.Kind.SHORT:
+        ans.text_answer = (request.POST.get("text") or "").strip()[:255]
+        ans.save(update_fields=["text_answer"])
+        ans.selected.clear()
+    else:
+        ids = request.POST.getlist("choice")
+        if ans.text_answer:
+            ans.text_answer = ""
+            ans.save(update_fields=["text_answer"])
+        ans.selected.set(Choice.objects.filter(id__in=ids, question=q))
+    answered = sum(1 for a in attempt.answers.prefetch_related("selected")
+                   if a.text_answer or a.selected.exists())
+    return JsonResponse({"ok": True, "answered": answered})
 
 
 @role_required(Role.STUDENT)

@@ -85,6 +85,8 @@ urlpatterns = [
     path("talabalar/import/", views.student_import, name="student_import"),
     path("talabalar/export/", views.student_export, name="student_export"),
     path("talabalar/shablon/", views.student_template, name="student_template"),
+    path("talabalar/hemis/import/", views.hemis_import, name="hemis_import"),
+    path("talabalar/hemis/shablon/", views.hemis_template, name="hemis_template"),
 
     path("hisobotlar/", views.report_center, name="reports"),
     path("hisobotlar/fakultet/", views.report_faculty, name="report_faculty"),
@@ -212,6 +214,7 @@ urlpatterns = [
     path("talaba/materiallar/", views_student.materials, name="student_materials"),
     path("talaba/testlar/", views_quiz.student_quizzes, name="student_quizzes"),
     path("talaba/testlar/<int:pk>/ishlash/", views_quiz.quiz_take, name="quiz_take"),
+    path("talaba/testlar/<int:pk>/saqlash/", views_quiz.quiz_autosave, name="quiz_autosave"),
     path("talaba/testlar/<int:pk>/natija/", views_quiz.quiz_result, name="quiz_result"),
     path("talaba/imtihonlar/", views_student.exams, name="student_exams"),
     path("talaba/imtihonlar/<int:pk>/ishlash/", views_student.exam_take, name="student_exam_take"),

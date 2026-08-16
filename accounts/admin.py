@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from .models import User, UserRole
+from .models import StudentProfile, User, UserRole
 
 
 class UserRoleInline(admin.TabularInline):
@@ -27,3 +27,10 @@ class UserRoleAdmin(admin.ModelAdmin):
     list_display = ("user", "role", "faculty", "department")
     list_filter = ("role",)
     autocomplete_fields = ["user", "faculty", "department"]
+
+
+@admin.register(StudentProfile)
+class StudentProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "student_id", "pinfl", "gender", "course", "group_name", "gpa")
+    search_fields = ("user__full_name", "user__username", "student_id", "pinfl", "passport_number")
+    list_filter = ("gender", "education_type", "payment_form", "is_graduating")

@@ -2,22 +2,144 @@
 {% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
 {% block crumbs %}{{ quiz.title }}{% endblock %}
 {% block content %}
-<div class="page-head"><h1>{{ quiz.title }}</h1></div>
+<div class="page-head" style="align-items:flex-start">
+  <div>
+    <h1 style="margin-bottom:2px">{{ quiz.title }}</h1>
+    <div class="help" id="save-status" data-answered="{{ answered }}">
+      <span id="answered-count">{{ answered }}</span>/{{ total }} savolga javob berilgan
+    </div>
+  </div>
+  <div class="spacer"></div>
+  <div id="save-badge" class="save-badge">Javoblar avtomatik saqlanadi</div>
+</div>
+
 {% if quiz.description %}<div class="help" style="margin-bottom:12px">{{ quiz.description }}</div>{% endif %}
-<form method="post" action="{% url 'portal:quiz_take' quiz.pk %}">{% csrf_token %}
+
+<div class="quiz-nav panel-card" style="margin-bottom:14px">
+  <div class="help" style="margin-bottom:8px">Savollar bo‘ylab tez o‘tish (yashil — javob berilgan):</div>
+  <div class="qnav-grid">
+    {% for q in questions %}
+      <a href="#q{{ forloop.counter }}" class="qnav-cell {% if q.saved_ids or q.saved_text %}done{% endif %}"
+         data-target="q{{ q.id }}">{{ forloop.counter }}</a>
+    {% endfor %}
+  </div>
+</div>
+
+<form method="post" action="{% url 'portal:quiz_take' quiz.pk %}" id="quiz-form">{% csrf_token %}
   {% for q in questions %}
-  <div class="panel-card">
-    <div style="margin-bottom:8px"><b>{{ forloop.counter }}.</b> <span data-tts="{{ q.text }}. Variantlar: {% for ch in q.choices.all %}{{ ch.text }}. {% endfor %}">{{ q.text }}</span> <span class="help">({{ q.points }} ball)</span>{% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}</div>
+  <div class="panel-card qcard" id="q{{ forloop.counter }}" data-qid="{{ q.id }}" data-kind="{{ q.kind }}">
+    <div style="margin-bottom:8px">
+      <b>{{ forloop.counter }}.</b>
+      <span data-tts="{{ q.text }}. Variantlar: {% for ch in q.choices.all %}{{ ch.text }}. {% endfor %}">{{ q.text }}</span>
+      <span class="help">({{ q.points }} ball)</span>
+      {% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}
+    </div>
     {% if q.kind == 'short' %}
-      <input type="text" name="q{{ q.id }}" placeholder="Javobingiz" style="width:100%;max-width:420px;padding:9px;border:1px solid var(--line);border-radius:8px">
+      <input type="text" name="q{{ q.id }}" value="{{ q.saved_text }}" placeholder="Javobingiz"
+             style="width:100%;max-width:420px;padding:9px;border:1px solid var(--line);border-radius:8px">
     {% elif q.kind == 'multiple' %}
-      {% for ch in q.choices.all %}<label style="display:block;margin:4px 0"><input type="checkbox" name="q{{ q.id }}" value="{{ ch.id }}"> {{ ch.text }}</label>{% endfor %}
+      {% for ch in q.choices.all %}
+      <label class="opt"><input type="checkbox" name="q{{ q.id }}" value="{{ ch.id }}"
+        {% if ch.id in q.saved_ids %}checked{% endif %}> <span>{{ ch.text }}</span></label>
+      {% endfor %}
     {% else %}
-      {% for ch in q.choices.all %}<label style="display:block;margin:4px 0"><input type="radio" name="q{{ q.id }}" value="{{ ch.id }}"> {{ ch.text }}</label>{% endfor %}
+      {% for ch in q.choices.all %}
+      <label class="opt"><input type="radio" name="q{{ q.id }}" value="{{ ch.id }}"
+        {% if ch.id in q.saved_ids %}checked{% endif %}> <span>{{ ch.text }}</span></label>
+      {% endfor %}
     {% endif %}
   </div>
   {% endfor %}
-  <button class="btn" type="submit">Testni topshirish</button>
+  <div class="submit-bar">
+    <button class="btn" type="submit" id="submit-btn">Testni topshirish</button>
+    <span class="help">Topshirgach javoblarni o‘zgartirib bo‘lmaydi.</span>
+  </div>
 </form>
+
+<style>
+.formula-box{display:inline-block;margin:4px 0;font-size:18px}.formula-box math{font-size:1.2em}
+.save-badge{font-size:12.5px;padding:6px 12px;border-radius:var(--r-pill);background:#eef2fe;color:#3d5ee1;
+  border:1px solid #d7e0fb;white-space:nowrap;transition:background .2s,color .2s}
+.save-badge.saving{background:#fff6e6;color:#b7791f;border-color:#f3e0b5}
+.save-badge.saved{background:#e8f6ee;color:#1e8f4e;border-color:#bfe6cd}
+.save-badge.error{background:#fdeaea;color:#c0392b;border-color:#f3c4c4}
+.qnav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px;max-width:520px}
+.qnav-cell{display:flex;align-items:center;justify-content:center;height:38px;border-radius:8px;
+  border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:600;font-size:14px;
+  text-decoration:none;transition:.15s}
+.qnav-cell:hover{border-color:var(--brand);color:var(--brand);text-decoration:none}
+.qnav-cell.done{background:#e8f6ee;border-color:#8fd6ab;color:#1e8f4e}
+.opt{display:flex;align-items:flex-start;gap:8px;margin:6px 0;padding:9px 11px;border:1px solid var(--line);
+  border-radius:10px;cursor:pointer;transition:.12s}
+.opt:hover{border-color:#c3cef5;background:#f7f9ff}
+.opt input{margin-top:2px;flex:none}
+.opt:has(input:checked){border-color:var(--brand);background:#eef2fe}
+.submit-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px}
+.qcard.flash{animation:qflash 1s ease}
+@keyframes qflash{0%{box-shadow:0 0 0 2px var(--brand)}100%{box-shadow:none}}
+</style>
+
+<script>
+(function(){
+  var form=document.getElementById('quiz-form');
+  if(!form) return;
+  var url="{% url 'portal:quiz_autosave' quiz.pk %}";
+  var csrf=form.querySelector('[name=csrfmiddlewaretoken]').value;
+  var badge=document.getElementById('save-badge');
+  var counter=document.getElementById('answered-count');
+  var total={{ total }};
+  var tmr={};
+
+  function setBadge(state,text){badge.className='save-badge '+state; badge.textContent=text;}
+  function cellFor(qid){return document.querySelector('.qnav-cell[data-target="q'+qid+'"]');}
+  function cardHasAnswer(card){
+    var kind=card.dataset.kind;
+    if(kind==='short'){return card.querySelector('input[type=text]').value.trim()!=='';}
+    return !!card.querySelector('input:checked');
+  }
+
+  function save(card){
+    var qid=card.dataset.qid, kind=card.dataset.kind;
+    var data=new URLSearchParams(); data.append('question',qid);
+    if(kind==='short'){ data.append('text', card.querySelector('input[type=text]').value); }
+    else { card.querySelectorAll('input:checked').forEach(function(i){data.append('choice',i.value);}); }
+    setBadge('saving','Saqlanmoqda…');
+    fetch(url,{method:'POST',headers:{'X-CSRFToken':csrf,'Content-Type':'application/x-www-form-urlencoded'},body:data})
+      .then(function(r){ if(r.status===409){throw new Error('submitted');} return r.json();})
+      .then(function(j){
+        if(j.ok){
+          setBadge('saved','✓ Saqlandi');
+          if(counter && typeof j.answered!=='undefined') counter.textContent=j.answered;
+          var cell=cellFor(qid); if(cell){ cardHasAnswer(card)?cell.classList.add('done'):cell.classList.remove('done'); }
+        } else { setBadge('error','Saqlashda xatolik'); }
+      })
+      .catch(function(e){
+        if(e.message==='submitted'){ setBadge('error','Test allaqachon topshirilgan'); }
+        else { setBadge('error','Ulanish yo‘q — qayta urinilyapti'); }
+      });
+  }
+
+  form.querySelectorAll('.qcard').forEach(function(card){
+    card.addEventListener('change', function(){ save(card); });        // radio/checkbox
+    var txt=card.querySelector('input[type=text]');
+    if(txt){ txt.addEventListener('input', function(){                  // matnli javob — debounce
+      clearTimeout(tmr[card.dataset.qid]);
+      tmr[card.dataset.qid]=setTimeout(function(){ save(card); }, 700);
+    }); }
+  });
+
+  // navigator: bosilganda savolni qisqa yoritib qo'yamiz
+  document.querySelectorAll('.qnav-cell').forEach(function(a){
+    a.addEventListener('click', function(){
+      var t=document.getElementById(this.getAttribute('href').slice(1));
+      if(t){ t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash'); }
+    });
+  });
+
+  // topshirishdan oldin tasdiq
+  form.addEventListener('submit', function(e){
+    if(!confirm('Testni topshirasizmi? Topshirgach javoblarni o‘zgartirib bo‘lmaydi.')){ e.preventDefault(); }
+  });
+})();
+</script>
 {% endblock %}
-<style>.formula-box{display:inline-block;margin:4px 0;font-size:18px}.formula-box math{font-size:1.2em}</style>

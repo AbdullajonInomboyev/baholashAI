@@ -33,6 +33,20 @@
   </form>
 </div>
 
+<div class="panel-card">
+  <h2>To‘liq (HEMIS) import</h2>
+  <div class="help" style="margin-bottom:10px">
+    HEMIS eksportidagi to‘liq talaba ma’lumotlarini (Talaba ID, JSHSHIR, pasport, jins, GPA, to‘lov shakli va h.k.) yuklaydi.
+    Talabalar <b>JSHSHIR yoki Talaba ID</b> bo‘yicha moslashtiriladi. Ustunlar sarlavha bo‘yicha aniqlanadi — tartibi muhim emas.
+  </div>
+  <a class="btn ghost" href="{% url 'portal:hemis_template' %}" style="margin-bottom:10px">HEMIS shabloni</a>
+  <form class="stack" method="post" enctype="multipart/form-data" action="{% url 'portal:hemis_import' %}">
+    {% csrf_token %}<input type="hidden" name="year" value="{{ year_id }}">
+    <input type="file" name="file" accept=".xlsx" required>
+    <div style="margin-top:12px"><button class="btn" type="submit">HEMIS ma’lumotini yuklash</button></div>
+  </form>
+</div>
+
 {% if enrollments %}
 <table class="grid"><thead><tr><th>F.I.Sh.</th><th>Login</th><th>Yo‘nalish</th><th>Shakl</th><th>Guruh</th><th>Holat</th><th></th></tr></thead><tbody>
   {% for e in enrollments %}<tr>

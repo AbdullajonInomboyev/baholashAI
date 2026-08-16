@@ -21,7 +21,7 @@ from .forms import (
     AcademicGroupForm, DepartmentForm, DirectionForm, ImportForm, ReportRemarkForm,
     StudentImportForm, StudentProfileForm, SyllabusTopicForm,
 )
-from .services import reports, students
+from .services import reports, students, hemis
 
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
@@ -344,6 +344,29 @@ def student_export(request):
 @role_required(Role.VICE_DEAN)
 def student_template(request):
     return _xlsx_response(students.build_template(), "talabalar_shablon.xlsx")
+
+
+@role_required(Role.VICE_DEAN)
+def hemis_template(request):
+    return _xlsx_response(hemis.build_template(), "talabalar_hemis_shablon.xlsx")
+
+
+@role_required(Role.VICE_DEAN)
+def hemis_import(request):
+    faculty, _ = _base(request)
+    year_id = request.POST.get("year")
+    if request.method == "POST" and request.FILES.get("file"):
+        result = hemis.import_hemis(request.FILES["file"])
+        log_action(request.user, "import", "StudentProfile", 0, new=result)
+        msg = (f"HEMIS import: {result['created']} yangi, {result['updated']} yangilangan "
+               f"(jami {result['total']} qator).")
+        if result["errors"]:
+            messages.warning(request, msg + " | " + " | ".join(result["errors"][:5]))
+        else:
+            messages.success(request, msg)
+    else:
+        messages.error(request, "Fayl tanlanmadi.")
+    return redirect(f"/zamdekan/talabalar/?year={year_id}" if year_id else "/zamdekan/talabalar/")
 
 
 # ---- Hisobotlar ----

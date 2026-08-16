@@ -38,7 +38,6 @@
   </div>
 </div>
 <style>.inp{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:14px}</style>
-
 <div class="panel-card" style="margin-top:16px">
   <h2>♿ Moslashuv imkoniyatlari</h2>
   <p class="help">Imkoniyati cheklangan talabalar uchun: ovozli o‘qish, yuqori kontrast va katta shrift. Sozlamalar barcha sahifalarga qo‘llanadi.</p>
@@ -51,4 +50,29 @@
   </form>
 </div>
 <style>.a11y-row{display:flex;align-items:center;gap:10px;padding:8px 0;font-size:15px}.a11y-row input{width:18px;height:18px}</style>
+
+{% if hemis %}
+<div class="panel-card" style="margin-top:16px">
+  <h2>To‘liq ma’lumotlar (HEMIS)</h2>
+  <div class="help" style="margin-bottom:8px">Bu ma’lumotlar dekanat tomonidan kiritiladi.</div>
+  <table class="grid"><tbody>
+    {% if hemis.student_id %}<tr><td style="width:220px">Talaba ID</td><td>{{ hemis.student_id }}</td></tr>{% endif %}
+    {% if hemis.pinfl %}<tr><td>JSHSHIR (PINFL)</td><td>{{ hemis.pinfl }}</td></tr>{% endif %}
+    {% if hemis.passport_number %}<tr><td>Pasport</td><td>{{ hemis.passport_number }}{% if hemis.passport_issued %} · {{ hemis.passport_issued|date:'d.m.Y' }}{% endif %}</td></tr>{% endif %}
+    {% if hemis.get_gender_display %}<tr><td>Jins</td><td>{{ hemis.get_gender_display }}</td></tr>{% endif %}
+    {% if hemis.citizenship %}<tr><td>Fuqarolik</td><td>{{ hemis.citizenship }}</td></tr>{% endif %}
+    {% if hemis.nationality %}<tr><td>Millat</td><td>{{ hemis.nationality }}</td></tr>{% endif %}
+    {% if hemis.region or hemis.district %}<tr><td>Hudud</td><td>{{ hemis.region }}{% if hemis.district %}, {{ hemis.district }}{% endif %}</td></tr>{% endif %}
+    {% if hemis.faculty_name %}<tr><td>Fakultet</td><td>{{ hemis.faculty_name }}</td></tr>{% endif %}
+    {% if hemis.specialty_code %}<tr><td>Mutaxassislik</td><td>{{ hemis.specialty_code }}</td></tr>{% endif %}
+    {% if hemis.course or hemis.semester %}<tr><td>Kurs / semestr</td><td>{{ hemis.course }}{% if hemis.semester %} · {{ hemis.semester }}{% endif %}</td></tr>{% endif %}
+    {% if hemis.education_type or hemis.education_form %}<tr><td>Ta’lim turi / shakli</td><td>{{ hemis.education_type }}{% if hemis.education_form %} · {{ hemis.education_form }}{% endif %}</td></tr>{% endif %}
+    {% if hemis.education_language %}<tr><td>Ta’lim tili</td><td>{{ hemis.education_language }}</td></tr>{% endif %}
+    {% if hemis.payment_form or hemis.grant_type %}<tr><td>To‘lov / grant</td><td>{{ hemis.payment_form }}{% if hemis.grant_type %} · {{ hemis.grant_type }}{% endif %}</td></tr>{% endif %}
+    {% if hemis.gpa is not None %}<tr><td>GPA</td><td><b>{{ hemis.gpa }}</b></td></tr>{% endif %}
+    {% if hemis.contract_number %}<tr><td>Kontrakt</td><td>{{ hemis.contract_number }}{% if hemis.contract_type %} · {{ hemis.contract_type }}{% endif %}</td></tr>{% endif %}
+    {% if hemis.order_info %}<tr><td>Buyruq</td><td>{{ hemis.order_info }}</td></tr>{% endif %}
+  </tbody></table>
+</div>
+{% endif %}
 {% endblock %}
