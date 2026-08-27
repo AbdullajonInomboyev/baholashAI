@@ -71,3 +71,17 @@ class QuestionAdmin(admin.ModelAdmin):
 @admin.register(QuizAttempt)
 class QuizAttemptAdmin(admin.ModelAdmin):
     list_display = ("quiz", "student", "score", "submitted_at")
+
+from assessment.models import GuestSession, GuestStudent
+
+
+@admin.register(GuestSession)
+class GuestSessionAdmin(admin.ModelAdmin):
+    list_display = ("title", "teacher", "quiz", "is_open", "created_at")
+    search_fields = ("title", "teacher__username")
+
+
+@admin.register(GuestStudent)
+class GuestStudentAdmin(admin.ModelAdmin):
+    list_display = ("full_name", "login", "session", "taken_at")
+    search_fields = ("full_name", "login")

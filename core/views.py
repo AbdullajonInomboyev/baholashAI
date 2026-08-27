@@ -6,6 +6,14 @@ from accounts.models import Role
 
 @login_required
 def dashboard(request):
+    if getattr(request.user, "is_guest", False):
+        from assessment.models import GuestStudent
+        gs = GuestStudent.objects.filter(user=request.user).select_related("session").first()
+        if gs:
+            if gs.taken_at:
+                return render(request, "portal/guest/done.html", {"gs": gs})
+            return redirect("portal:quiz_take", pk=gs.session.quiz_id)
+        return render(request, "portal/guest/done.html", {"gs": None})
     codes = request.user.role_codes()
     active = request.session.get("active_role")
     active = active if active in codes else (codes[0] if codes else None)

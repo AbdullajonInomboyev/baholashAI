@@ -13,10 +13,19 @@
 
 {% for g in groups %}
 <div class="panel-card"><h2>{{ g.name }} <span class="tag mut">{{ g.questions.count }} savol</span></h2>
-  {% if g.questions.all %}<ol style="margin:0;padding-left:20px">{% for q in g.questions.all %}<li style="margin:6px 0">{{ q.raw_text|default:"[savol]"|truncatechars:120 }}
+  {% if g.questions.all %}<ol style="margin:0;padding-left:20px">{% for q in g.questions.all %}<li style="margin:8px 0">{{ q.raw_text|default:"[savol]"|truncatechars:160 }}
     {% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}
-    {% if q.formula_omml and not q.formula_mathml %}<span class="tag mut">formula</span>{% endif %}{% if q.images.count %}<span class="tag mut">{{ q.images.count }} rasm</span>{% endif %}</li>{% endfor %}</ol>
+    {% if q.image_data %}<div><img src="{{ q.image_data }}" alt="rasm" style="max-width:240px;max-height:150px;margin-top:6px;border:1px solid var(--line);border-radius:6px"></div>{% endif %}
+    <div style="margin-top:4px">
+      <a class="btn sm ghost" href="{% url 'portal:qbank_written_q_edit' q.pk %}">Tahrir</a>
+      <form class="inline-form" method="post" action="{% url 'portal:qbank_written_q_delete' q.pk %}" onsubmit="return confirm('Savol o‘chirilsinmi?')">{% csrf_token %}<button class="btn sm danger" type="submit">O‘chirish</button></form>
+    </div></li>{% endfor %}</ol>
   {% else %}<div class="help">Savol yo‘q.</div>{% endif %}
+  <form class="stack" method="post" action="{% url 'portal:qbank_written_q_add' g.pk %}" style="margin-top:12px;border-top:1px solid var(--line);padding-top:12px">{% csrf_token %}
+    <label>Yangi savol qo‘shish</label>
+    <div style="display:flex;gap:8px"><textarea class="inp" name="raw_text" rows="1" placeholder="Savol matni" required style="flex:1"></textarea>
+      <button class="btn sm" type="submit">Qo‘shish</button></div>
+  </form>
 </div>
 {% empty %}<div class="empty">Guruh yo‘q. Word fayl yuklang.</div>{% endfor %}
 

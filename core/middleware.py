@@ -21,6 +21,24 @@ class CurrentUserMiddleware:
             _state.user = None
 
 
+class GuestRestrictMiddleware:
+    """Mehmon (bir martalik test) foydalanuvchisini FAQAT o'z testiga cheklaydi."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        user = getattr(request, "user", None)
+        if user is not None and user.is_authenticated and getattr(user, "is_guest", False):
+            path = request.path
+            allowed_prefixes = ("/zamdekan/talaba/testlar/", "/zamdekan/a11y/",
+                                "/hisob/chiqish/", "/static/", "/media/")
+            if path != "/" and not path.startswith(allowed_prefixes):
+                from django.shortcuts import redirect
+                return redirect("core:dashboard")
+        return self.get_response(request)
+
+
 class ForcePasswordChangeMiddleware:
     """Vaqtinchalik parolli foydalanuvchini majburan parol o'zgartirishga yo'naltiradi."""
 

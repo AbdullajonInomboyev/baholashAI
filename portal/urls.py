@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views, views_announce, views_common, views_dept, views_qbank, views_quiz, views_student, views_teacher
+from . import views, views_announce, views_common, views_dept, views_guest, views_qbank, views_quiz, views_student, views_teacher
 
 app_name = "portal"
 
@@ -201,12 +201,28 @@ urlpatterns = [
     path("oqituvchi/savollar-banki/test/<int:pk>/import/", views_qbank.test_import, name="qbank_test_import"),
     path("oqituvchi/savollar-banki/test/<int:pk>/ochirish/", views_qbank.test_delete, name="qbank_test_delete"),
     path("oqituvchi/savollar-banki/test/<int:pk>/test-yaratish/", views_qbank.test_to_quiz, name="qbank_test_to_quiz"),
+    path("oqituvchi/savollar-banki/test/<int:pk>/savol-qoshish/", views_qbank.test_q_add, name="qbank_test_q_add"),
+    path("oqituvchi/savollar-banki/test-savol/<int:pk>/tahrir/", views_qbank.test_q_edit, name="qbank_test_q_edit"),
+    path("oqituvchi/savollar-banki/test-savol/<int:pk>/ochirish/", views_qbank.test_q_delete, name="qbank_test_q_delete"),
+    path("oqituvchi/savollar-banki/yozma-guruh/<int:pk>/savol-qoshish/", views_qbank.written_q_add, name="qbank_written_q_add"),
+    path("oqituvchi/savollar-banki/yozma-savol/<int:pk>/tahrir/", views_qbank.written_q_edit, name="qbank_written_q_edit"),
+    path("oqituvchi/savollar-banki/yozma-savol/<int:pk>/ochirish/", views_qbank.written_q_delete, name="qbank_written_q_delete"),
     path("oqituvchi/savollar-banki/yozma/<int:pk>/", views_qbank.written_detail, name="qbank_written_detail"),
     path("oqituvchi/savollar-banki/yozma/<int:pk>/import/", views_qbank.written_import, name="qbank_written_import"),
     path("oqituvchi/savollar-banki/yozma/<int:pk>/ochirish/", views_qbank.written_delete, name="qbank_written_delete"),
     path("oqituvchi/savollar-banki/yozma/<int:pk>/imtihon/", views_qbank.written_to_exam, name="qbank_written_to_exam"),
     path("oqituvchi/imtihon/<int:pk>/topshiriqlar/", views_qbank.exam_submissions, name="qbank_exam_submissions"),
     path("oqituvchi/imtihon-topshirig/<int:pk>/baholash/", views_qbank.exam_review, name="qbank_exam_review"),
+    path("oqituvchi/imtihon-topshirig/<int:pk>/ai-baholash/", views_qbank.exam_ai_grade, name="qbank_exam_ai_grade"),
+
+    path("oqituvchi/bir-martalik/", views_guest.guest_sessions, name="guest_sessions"),
+    path("oqituvchi/bir-martalik/<int:pk>/", views_guest.guest_detail, name="guest_detail"),
+    path("oqituvchi/bir-martalik/shablon/", views_guest.guest_template, name="guest_template"),
+    path("oqituvchi/bir-martalik/<int:pk>/yuklash/", views_guest.guest_import, name="guest_import"),
+    path("oqituvchi/bir-martalik/<int:pk>/loginlar/", views_guest.guest_logins_export, name="guest_logins_export"),
+    path("oqituvchi/bir-martalik/<int:pk>/talabalar-ochirish/", views_guest.guest_students_delete, name="guest_students_delete"),
+    path("oqituvchi/bir-martalik/<int:pk>/ochirish/", views_guest.guest_session_delete, name="guest_session_delete"),
+    path("oqituvchi/bir-martalik/<int:pk>/holat/", views_guest.guest_toggle, name="guest_toggle"),
     path("oqituvchi/savol/<int:pk>/ochirish/", views_quiz.quiz_question_delete, name="quiz_question_delete"),
     path("oqituvchi/testlar/<int:pk>/holat/", views_quiz.quiz_toggle, name="quiz_toggle"),
     path("oqituvchi/testlar/<int:pk>/natijalar/", views_quiz.quiz_results, name="quiz_results"),

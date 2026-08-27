@@ -1,5 +1,5 @@
 {% extends 'portal/base_panel.html' %}
-{% block nav %}{% include 'portal/student/_nav.html' %}{% endblock %}
+{% block nav %}{% if user.is_guest %}<div class="side-nav" style="padding:16px"><div class="help">Bir martalik test</div></div>{% else %}{% include 'portal/student/_nav.html' %}{% endif %}{% endblock %}
 {% block crumbs %}{{ quiz.title }}{% endblock %}
 {% block content %}
 <div class="page-head" style="align-items:flex-start">
@@ -33,6 +33,7 @@
       <span data-tts="{{ q.text }}. Variantlar: {% for ch in q.choices.all %}{{ ch.text }}. {% endfor %}">{{ q.text }}</span>
       <span class="help">({{ q.points }} ball)</span>
       {% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}
+      {% if q.image_data %}<div><img src="{{ q.image_data }}" alt="rasm" style="max-width:100%;max-height:260px;margin:6px 0;border:1px solid var(--line);border-radius:8px"></div>{% endif %}
     </div>
     {% if q.kind == 'short' %}
       <input type="text" name="q{{ q.id }}" value="{{ q.saved_text }}" placeholder="Javobingiz"
@@ -40,12 +41,12 @@
     {% elif q.kind == 'multiple' %}
       {% for ch in q.choices.all %}
       <label class="opt"><input type="checkbox" name="q{{ q.id }}" value="{{ ch.id }}"
-        {% if ch.id in q.saved_ids %}checked{% endif %}> <span>{{ ch.text }}</span></label>
+        {% if ch.id in q.saved_ids %}checked{% endif %}> <span>{{ ch.text }}{% if ch.image_data %}<img src="{{ ch.image_data }}" style="max-height:38px;vertical-align:middle;margin-left:4px">{% endif %}</span></label>
       {% endfor %}
     {% else %}
       {% for ch in q.choices.all %}
       <label class="opt"><input type="radio" name="q{{ q.id }}" value="{{ ch.id }}"
-        {% if ch.id in q.saved_ids %}checked{% endif %}> <span>{{ ch.text }}</span></label>
+        {% if ch.id in q.saved_ids %}checked{% endif %}> <span>{{ ch.text }}{% if ch.image_data %}<img src="{{ ch.image_data }}" style="max-height:38px;vertical-align:middle;margin-left:4px">{% endif %}</span></label>
       {% endfor %}
     {% endif %}
   </div>

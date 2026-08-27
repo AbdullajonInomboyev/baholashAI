@@ -165,14 +165,17 @@ def test_to_quiz(request, pk):
         order += 1
         q = QQuestion.objects.create(quiz=quiz, text=text, kind=QQuestion.Kind.SINGLE,
                                      points=1, order=order,
-                                     formula_mathml=tq.formula_mathml or "")
-        variants = [(tq.correct_answer, True)]
-        for opt in (tq.option1, tq.option2, tq.option3):
-            if opt:
-                variants.append((opt, False))
+                                     formula_mathml=tq.formula_mathml or "",
+                                     image_data=tq.image_data or "")
+        variants = [(tq.correct_answer, tq.correct_img, True)]
+        for opt, img in ((tq.option1, tq.option1_img), (tq.option2, tq.option2_img),
+                         (tq.option3, tq.option3_img)):
+            if opt or img:
+                variants.append((opt, img, False))
         random.shuffle(variants)
-        for oi, (t, ok) in enumerate(variants, start=1):
-            Choice.objects.create(question=q, text=(t or "")[:255], is_correct=ok, order=oi)
+        for oi, (t, img, ok) in enumerate(variants, start=1):
+            Choice.objects.create(question=q, text=(t or "")[:255], image_data=img or "",
+                                  is_correct=ok, order=oi)
     cur = ta.department_course.course.curriculum
     students = get_user_model().objects.filter(
         enrollments__direction=cur.direction, enrollments__study_form=cur.study_form).distinct()
@@ -223,6 +226,35 @@ def exam_submissions(request, pk):
 
 
 @role_required(Role.TEACHER)
+def exam_ai_grade(request, pk):
+    """Topshiriqdagi barcha javoblarni AI bilan baholaydi (taklif sifatida to'ldiradi)."""
+    from qbank.models import WrittenExamSubmission
+    from assessment.services import ai_grading
+    sub = get_object_or_404(
+        WrittenExamSubmission.objects.select_related("exam", "student"),
+        pk=pk, exam__created_by=request.user)
+    if not ai_grading.is_enabled():
+        messages.warning(request, "AI baholash o‘chiq: ANTHROPIC_API_KEY sozlanmagan. "
+                                  "Render → Environment’ga kalit qo‘shing.")
+        return redirect("portal:qbank_exam_review", pk=sub.pk)
+    graded = 0
+    for a in sub.answers.select_related("question"):
+        qtext = a.question.raw_text or "Savol"
+        res = ai_grading.grade_answer(qtext, a.answer_text, max_score=10)
+        if res is not None:
+            a.score = res["score"]
+            a.feedback = ("[AI taklifi] " + res["feedback"])[:500]
+            a.save(update_fields=["score", "feedback"])
+            graded += 1
+    if graded:
+        messages.success(request, f"AI {graded} ta javobga ball va izoh taklif qildi. "
+                                  "Ko‘rib chiqing, o‘zgartiring va «Baholash»ni bosing.")
+    else:
+        messages.error(request, "AI baholab bo‘lmadi (kalit yoki ulanishni tekshiring).")
+    return redirect("portal:qbank_exam_review", pk=sub.pk)
+
+
+@role_required(Role.TEACHER)
 def exam_review(request, pk):
     from qbank.models import WrittenExamSubmission
     sub = get_object_or_404(
@@ -252,3 +284,105 @@ def exam_review(request, pk):
     ctx = _panel(request)
     ctx.update({"active": "qbank", "sub": sub, "answers": answers})
     return render(request, "portal/qbank/exam_review.html", ctx)
+
+
+# ============ Har savolni qo'lda qo'shish / tahrirlash / o'chirish ============
+
+def _test_q_owned(user, pk):
+    return get_object_or_404(TestQuestion, pk=pk, bank__created_by=user)
+
+
+@role_required(Role.TEACHER)
+def test_q_add(request, pk):
+    bank = get_object_or_404(TestBank, pk=pk, created_by=request.user)
+    if request.method == "POST":
+        text = (request.POST.get("raw_text") or "").strip()
+        correct = (request.POST.get("correct_answer") or "").strip()
+        if not text or not correct:
+            messages.error(request, "Savol matni va to‘g‘ri javob majburiy.")
+        else:
+            TestQuestion.objects.create(
+                bank=bank, raw_text=text, question_html=f"<p>{text}</p>",
+                correct_answer=correct,
+                option1=(request.POST.get("option1") or "").strip(),
+                option2=(request.POST.get("option2") or "").strip(),
+                option3=(request.POST.get("option3") or "").strip(),
+                accessible=True)
+            messages.success(request, "Savol qo‘shildi.")
+    return redirect("portal:qbank_test_detail", pk=bank.pk)
+
+
+@role_required(Role.TEACHER)
+def test_q_edit(request, pk):
+    q = _test_q_owned(request.user, pk)
+    if request.method == "POST":
+        q.raw_text = (request.POST.get("raw_text") or "").strip()
+        q.question_html = f"<p>{q.raw_text}</p>"
+        q.correct_answer = (request.POST.get("correct_answer") or "").strip()
+        q.option1 = (request.POST.get("option1") or "").strip()
+        q.option2 = (request.POST.get("option2") or "").strip()
+        q.option3 = (request.POST.get("option3") or "").strip()
+        if request.POST.get("remove_image"):
+            q.image_data = ""
+        q.save()
+        messages.success(request, "Savol yangilandi.")
+        return redirect("portal:qbank_test_detail", pk=q.bank_id)
+    ctx = _panel(request)
+    ctx.update({"active": "qbank", "q": q, "bank": q.bank})
+    return render(request, "portal/qbank/test_question_form.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def test_q_delete(request, pk):
+    q = _test_q_owned(request.user, pk)
+    bank_id = q.bank_id
+    q.delete()
+    messages.success(request, "Savol o‘chirildi.")
+    return redirect("portal:qbank_test_detail", pk=bank_id)
+
+
+# ---- Yozma bank savollari ----
+
+def _written_q_owned(user, pk):
+    return get_object_or_404(Question, pk=pk, group__bank__created_by=user)
+
+
+@role_required(Role.TEACHER)
+def written_q_add(request, pk):
+    from qbank.models import QuestionGroup
+    group = get_object_or_404(QuestionGroup, pk=pk, bank__created_by=request.user)
+    if request.method == "POST":
+        text = (request.POST.get("raw_text") or "").strip()
+        if not text:
+            messages.error(request, "Savol matni majburiy.")
+        else:
+            Question.objects.create(
+                group=group, raw_text=text, content_html=f"<p>{text}</p>",
+                difficulty="medium", accessible=True, allowed_answer_types=["text"])
+            messages.success(request, "Savol qo‘shildi.")
+    return redirect("portal:qbank_written_detail", pk=group.bank_id)
+
+
+@role_required(Role.TEACHER)
+def written_q_edit(request, pk):
+    q = _written_q_owned(request.user, pk)
+    if request.method == "POST":
+        q.raw_text = (request.POST.get("raw_text") or "").strip()
+        q.content_html = f"<p>{q.raw_text}</p>"
+        if request.POST.get("remove_image"):
+            q.image_data = ""
+        q.save()
+        messages.success(request, "Savol yangilandi.")
+        return redirect("portal:qbank_written_detail", pk=q.group.bank_id)
+    ctx = _panel(request)
+    ctx.update({"active": "qbank", "q": q, "bank": q.group.bank})
+    return render(request, "portal/qbank/written_question_form.html", ctx)
+
+
+@role_required(Role.TEACHER)
+def written_q_delete(request, pk):
+    q = _written_q_owned(request.user, pk)
+    bank_id = q.group.bank_id
+    q.delete()
+    messages.success(request, "Savol o‘chirildi.")
+    return redirect("portal:qbank_written_detail", pk=bank_id)

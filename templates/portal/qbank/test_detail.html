@@ -25,13 +25,31 @@
 {% endif %}
 
 <div class="panel-card"><h2>Savollar ({{ questions|length }})</h2>
-  {% if questions %}<table class="grid"><thead><tr><th>#</th><th>Savol</th><th>To‘g‘ri javob</th><th>Muqobillar</th><th>Formula/Rasm</th></tr></thead><tbody>
+  {% if questions %}<table class="grid"><thead><tr><th>#</th><th>Savol</th><th>To‘g‘ri javob</th><th>Muqobillar</th><th>Amallar</th></tr></thead><tbody>
     {% for q in questions %}<tr><td>{{ forloop.counter }}</td>
-      <td>{{ q.raw_text|default:"—"|truncatechars:80 }}{% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}</td>
-      <td><b>{{ q.correct_answer }}</b></td>
-      <td>{{ q.option1 }}{% if q.option2 %}, {{ q.option2 }}{% endif %}{% if q.option3 %}, {{ q.option3 }}{% endif %}</td>
-      <td>{% if q.formula_omml and not q.formula_mathml %}<span class="tag mut">formula</span>{% endif %}{% if q.image %}<span class="tag mut">rasm</span>{% endif %}</td></tr>{% endfor %}
-  </tbody></table>{% else %}<div class="empty">Savol yo‘q. Word fayl yuklang.</div>{% endif %}
+      <td>{{ q.raw_text|default:"—"|truncatechars:80 }}{% if q.formula_mathml %}<div class="formula-box">{{ q.formula_mathml|safe }}</div>{% endif %}{% if q.image_data %}<div><img src="{{ q.image_data }}" alt="rasm" style="max-width:220px;max-height:130px;margin-top:6px;border:1px solid var(--line);border-radius:6px"></div>{% endif %}</td>
+      <td><b>{{ q.correct_answer }}</b>{% if q.correct_img %}<div><img src="{{ q.correct_img }}" style="max-height:34px;vertical-align:middle"></div>{% endif %}</td>
+      <td>
+        {% if q.option1 or q.option1_img %}<div>{{ q.option1 }}{% if q.option1_img %} <img src="{{ q.option1_img }}" style="max-height:30px;vertical-align:middle">{% endif %}</div>{% endif %}
+        {% if q.option2 or q.option2_img %}<div>{{ q.option2 }}{% if q.option2_img %} <img src="{{ q.option2_img }}" style="max-height:30px;vertical-align:middle">{% endif %}</div>{% endif %}
+        {% if q.option3 or q.option3_img %}<div>{{ q.option3 }}{% if q.option3_img %} <img src="{{ q.option3_img }}" style="max-height:30px;vertical-align:middle">{% endif %}</div>{% endif %}
+      </td>
+      <td style="white-space:nowrap">
+        <a class="btn sm ghost" href="{% url 'portal:qbank_test_q_edit' q.pk %}">Tahrir</a>
+        <form class="inline-form" method="post" action="{% url 'portal:qbank_test_q_delete' q.pk %}" onsubmit="return confirm('Savol o‘chirilsinmi?')">{% csrf_token %}<button class="btn sm danger" type="submit">O‘chirish</button></form>
+      </td></tr>{% endfor %}
+  </tbody></table>{% else %}<div class="empty">Savol yo‘q. Word fayl yuklang yoki qo‘lda qo‘shing.</div>{% endif %}
+</div>
+
+<div class="panel-card" style="max-width:640px"><h2>➕ Qo‘lda savol qo‘shish</h2>
+  <form class="stack" method="post" action="{% url 'portal:qbank_test_q_add' bank.pk %}">{% csrf_token %}
+    <label>Savol matni</label><textarea class="inp" name="raw_text" rows="2" required></textarea>
+    <label>To‘g‘ri javob</label><input class="inp" type="text" name="correct_answer" required>
+    <div class="row"><div><label>Muqobil 1</label><input class="inp" type="text" name="option1"></div>
+      <div><label>Muqobil 2</label><input class="inp" type="text" name="option2"></div></div>
+    <label>Muqobil 3</label><input class="inp" type="text" name="option3">
+    <div style="margin-top:12px"><button class="btn sm" type="submit">Qo‘shish</button></div>
+  </form>
 </div>
 <a class="btn ghost" href="{% url 'portal:qbank_banks' %}">← Banklar</a>
 {% endblock %}

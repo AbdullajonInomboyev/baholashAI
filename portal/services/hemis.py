@@ -1,3 +1,9 @@
+"""HEMIS talaba pasporti (to'liq ma'lumot) importi va shabloni.
+
+Ustunlar SARLAVHA bo'yicha aniqlanadi (joylashuvi muhim emas), shuning uchun
+HEMIS eksportidagi ustunlar tartibi boshqacha bo'lsa ham ishlaydi.
+Talaba JSHSHIR (PINFL) yoki Talaba ID bo'yicha moslashtiriladi.
+"""
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from io import BytesIO

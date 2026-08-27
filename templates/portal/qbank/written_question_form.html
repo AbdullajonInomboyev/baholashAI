@@ -1,0 +1,25 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Yozma savolni tahrirlash{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Yozma savolni tahrirlash</h1></div>
+
+<div class="panel-card" style="max-width:640px">
+  <form class="stack" method="post" action="{% url 'portal:qbank_written_q_edit' q.pk %}">{% csrf_token %}
+    <label>Savol matni</label>
+    <textarea class="inp" name="raw_text" rows="4" required>{{ q.raw_text }}</textarea>
+
+    {% if q.formula_mathml %}<div class="help">Formula: <span class="formula-box">{{ q.formula_mathml|safe }}</span></div>{% endif %}
+    {% if q.image_data %}
+      <div style="margin:8px 0"><img src="{{ q.image_data }}" style="max-width:220px;border:1px solid var(--line);border-radius:6px">
+        <label class="help" style="display:block;margin-top:4px"><input type="checkbox" name="remove_image"> Rasmni o‘chirish</label></div>
+    {% endif %}
+
+    <div style="margin-top:14px;display:flex;gap:10px">
+      <button class="btn" type="submit">Saqlash</button>
+      <a class="btn ghost" href="{% url 'portal:qbank_written_detail' q.group.bank_id %}">Bekor qilish</a>
+    </div>
+  </form>
+</div>
+<style>.formula-box{display:inline-block;font-size:17px}.formula-box math{font-size:1.15em}</style>
+{% endblock %}

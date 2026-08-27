@@ -101,6 +101,13 @@ def quiz_results(request, pk):
 # ==================== TALABA ====================
 
 def _visible_quizzes(user):
+    # Mehmon (bir martalik test) — faqat o'z sessiyasidagi testni ko'radi
+    if getattr(user, "is_guest", False):
+        from assessment.models import GuestStudent
+        gs = GuestStudent.objects.filter(user=user, session__is_open=True).select_related("session__quiz").first()
+        if gs:
+            return Quiz.objects.filter(pk=gs.session.quiz_id)
+        return Quiz.objects.none()
     filters = Q()
     for e in StudentEnrollment.objects.filter(student=user):
         filters |= Q(
@@ -146,6 +153,10 @@ def quiz_take(request, pk):
                 if ids:
                     ans.selected.set(Choice.objects.filter(id__in=ids, question=q))
         quiz_service.grade_attempt(attempt)
+        if getattr(request.user, "is_guest", False):
+            from assessment.models import GuestStudent
+            from django.utils import timezone as _tz
+            GuestStudent.objects.filter(user=request.user).update(taken_at=_tz.now())
         messages.success(request, "Test topshirildi va avtomatik baholandi.")
         return redirect("portal:quiz_result", pk=quiz.pk)
 

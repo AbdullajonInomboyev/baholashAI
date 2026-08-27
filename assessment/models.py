@@ -193,6 +193,7 @@ class Question(models.Model):
     points = models.PositiveIntegerField("Ball", default=1)
     correct_text = models.CharField("To‘g‘ri javob (qisqa matn)", max_length=255, blank=True)
     formula_mathml = models.TextField("Formula (MathML)", blank=True)
+    image_data = models.TextField("Rasm (data URL)", blank=True)
     order = models.PositiveIntegerField("Tartib", default=0)
 
     class Meta:
@@ -207,6 +208,7 @@ class Question(models.Model):
 class Choice(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="choices")
     text = models.CharField("Variant", max_length=255)
+    image_data = models.TextField("Variant rasmi (data URL)", blank=True)
     is_correct = models.BooleanField("To‘g‘ri", default=False)
     order = models.PositiveIntegerField(default=0)
 
@@ -289,3 +291,42 @@ class CriterionScore(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["submission", "criterion"], name="uniq_criterion_score")
         ]
+
+
+class GuestSession(models.Model):
+    """O'qituvchi tizimda yo'q talabalar uchun BIR MARTALIK test o'tkazadi."""
+    teacher = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                related_name="guest_sessions", verbose_name="O'qituvchi")
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="guest_sessions",
+                             verbose_name="Test")
+    title = models.CharField("Sessiya nomi", max_length=200)
+    is_open = models.BooleanField("Ochiq", default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        verbose_name = "Mehmon test sessiyasi"
+        verbose_name_plural = "Mehmon test sessiyalari"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return self.title
+
+
+class GuestStudent(models.Model):
+    """Bir martalik sessiyaga yuklangan talaba (tizimda doimiy emas)."""
+    session = models.ForeignKey(GuestSession, on_delete=models.CASCADE,
+                                related_name="students", verbose_name="Sessiya")
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+                                related_name="guest_membership")
+    full_name = models.CharField("F.I.Sh.", max_length=255)
+    login = models.CharField("Login", max_length=150)
+    plain_password = models.CharField("Parol (berish uchun)", max_length=64, blank=True)
+    taken_at = models.DateTimeField("Topshirgan vaqti", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Mehmon talaba"
+        verbose_name_plural = "Mehmon talabalar"
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.full_name} ({self.login})"

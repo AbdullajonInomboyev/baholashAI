@@ -436,7 +436,8 @@ def profile(request):
         return redirect("portal:student_profile")
     ctx.update({"active": "profile", "user_obj": user,
                 "enrollment": _my_enrollments(request.user).first(),
-                "group": _my_groups(request.user).first()})
+                "group": _my_groups(request.user).first(),
+                "hemis": getattr(user, "student_profile", None)})
     return render(request, "portal/student/profile.html", ctx)
 
 

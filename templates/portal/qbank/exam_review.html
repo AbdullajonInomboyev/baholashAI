@@ -3,6 +3,13 @@
 {% block crumbs %}Baholash{% endblock %}
 {% block content %}
 <div class="page-head"><h1>{{ sub.exam.title }}</h1><div class="spacer"></div><span class="help">{{ sub.student.full_name|default:sub.student.username }}</span></div>
+
+<div class="panel-card" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  <form method="post" action="{% url 'portal:qbank_exam_ai_grade' sub.pk %}" class="inline-form" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='AI baholayapti…'">{% csrf_token %}
+    <button class="btn sm" type="submit">🤖 AI bilan baholash</button></form>
+  <span class="help">AI har javobga ball va izoh (nega shunday) taklif qiladi. Yakuniy qaror sizda — ko‘rib chiqib, o‘zgartirib, «Baholashni saqlash»ni bosing.</span>
+</div>
+
 <form method="post">{% csrf_token %}
   {% for a in answers %}
   <div class="panel-card">

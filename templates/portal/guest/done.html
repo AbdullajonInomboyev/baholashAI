@@ -1,0 +1,11 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}<div class="side-nav" style="padding:16px"><div class="help">Bir martalik test</div></div>{% endblock %}
+{% block crumbs %}Test yakunlandi{% endblock %}
+{% block content %}
+<div class="panel-card" style="max-width:520px;margin:40px auto;text-align:center">
+  <div style="font-size:44px">✅</div>
+  <h1 style="margin:8px 0">Test topshirildi</h1>
+  <p class="help">Rahmat{% if gs %}, {{ gs.full_name }}{% endif %}! Javoblaringiz qabul qilindi. Endi tizimdan chiqishingiz mumkin.</p>
+  <a class="btn" href="{% url 'accounts:logout' %}" style="margin-top:10px">Chiqish</a>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Bir martalik test{% endblock %}
+{% block content %}
+<div class="page-head"><h1>Bir martalik test sessiyalari</h1></div>
+<div class="help" style="margin-bottom:14px">Tizimda yo‘q talabalar uchun bir martalik test o‘tkazing: sessiya yarating → talabalarni yuklang → login/parol tarqating → ular kirib testni yechadi.</div>
+
+<div class="panel-card" style="max-width:640px"><h2>➕ Yangi sessiya</h2>
+  <form class="stack" method="post">{% csrf_token %}
+    <label>Sessiya nomi</label><input class="inp" type="text" name="title" placeholder="Masalan: 1-kurs sinov testi" required>
+    <label>Qaysi test</label>
+    <select class="inp" name="quiz" required>
+      <option value="">— testni tanlang —</option>
+      {% for q in quizzes %}<option value="{{ q.pk }}">{{ q.title }}</option>{% endfor %}
+    </select>
+    <div class="help">Test avval «Savollar banki»dan yaratilgan bo‘lishi kerak.</div>
+    <div style="margin-top:12px"><button class="btn" type="submit">Sessiya yaratish</button></div>
+  </form>
+</div>
+
+<div class="panel-card"><h2>Sessiyalar</h2>
+  {% if sessions %}<table class="grid"><thead><tr><th>Nomi</th><th>Test</th><th>Talabalar</th><th>Holat</th><th></th></tr></thead><tbody>
+    {% for s in sessions %}<tr>
+      <td>{{ s.title }}</td><td>{{ s.quiz.title }}</td><td>{{ s.students.count }}</td>
+      <td>{% if s.is_open %}<span class="tag ok">ochiq</span>{% else %}<span class="tag mut">yopiq</span>{% endif %}</td>
+      <td><a class="btn sm ghost" href="{% url 'portal:guest_detail' s.pk %}">Ochish</a></td>
+    </tr>{% endfor %}
+  </tbody></table>{% else %}<div class="empty">Hali sessiya yo‘q.</div>{% endif %}
+</div>
+{% endblock %}

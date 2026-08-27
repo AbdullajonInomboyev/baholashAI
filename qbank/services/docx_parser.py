@@ -1,5 +1,6 @@
 import os
 import uuid
+import base64
 
 import bleach
 from docx import Document
@@ -25,6 +26,7 @@ XML_NAMESPACES = {
     "wp": "http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing",
     "pic": "http://schemas.openxmlformats.org/drawingml/2006/picture",
     "m": "http://schemas.openxmlformats.org/officeDocument/2006/math",
+    "v": "urn:schemas-microsoft-com:vml",
 }
 
 
@@ -66,6 +68,44 @@ class BaseDocxParser:
             "content_type": content_type,
             "bytes": blob,
         }
+
+    def _rid_to_data_url(self, rid):
+        """rId -> brauzerbop PNG data URL. WMF/EMF bo'lsa konvertatsiya qiladi."""
+        info = self._extract_image_by_rid(rid)
+        if not info or not info.get("bytes"):
+            return ""
+        name = (info.get("filename") or "").lower()
+        ct = (info.get("content_type") or "").lower()
+        import base64 as _b64
+        if name.endswith((".wmf", ".emf")) or "wmf" in ct or "emf" in ct or "x-emf" in ct:
+            from qbank.services.formula_image import wmf_bytes_to_data_url
+            ext = ".emf" if (name.endswith(".emf") or "emf" in ct) else ".wmf"
+            return wmf_bytes_to_data_url(info["bytes"], ext=ext) or ""
+        # oddiy raster (png/jpg/gif)
+        b64 = _b64.b64encode(info["bytes"]).decode("ascii")
+        ctype = ct if ct.startswith("image/") else "image/png"
+        return f"data:{ctype};base64,{b64}"
+
+    def _cell_image_data_url(self, cell):
+        """Katak ichidagi BIRINCHI rasm/formulani (a:blip yoki v:imagedata=MathType)
+        brauzerbop PNG data URL sifatida qaytaradi. Bo'lmasa ''."""
+        tc = cell._tc
+        R = XML_NAMESPACES["r"]
+        # 1) DrawingML rasm (a:blip r:embed)
+        for blip in tc.findall(f".//{{{XML_NAMESPACES['a']}}}blip"):
+            rid = blip.get(f"{{{R}}}embed")
+            if rid:
+                url = self._rid_to_data_url(rid)
+                if url:
+                    return url
+        # 2) VML rasm / MathType formula ko'rinishi (v:imagedata r:id)
+        for imgd in tc.findall(f".//{{{XML_NAMESPACES['v']}}}imagedata"):
+            rid = imgd.get(f"{{{R}}}id")
+            if rid:
+                url = self._rid_to_data_url(rid)
+                if url:
+                    return url
+        return ""
 
     def _extract_paragraph_content(self, paragraph):
         """
@@ -275,6 +315,19 @@ class BaseDocxParser:
 
         return saved_urls
 
+    def _first_image_data_url(self, images):
+        """Birinchi rasmni base64 data URL ko‘rinishiga o‘tkazadi (bazada saqlanadi,
+        Render'da deploydan keyin ham yo‘qolmaydi — S3 shart emas)."""
+        if not images:
+            return ""
+        img = images[0]
+        try:
+            b64 = base64.b64encode(img["bytes"]).decode("ascii")
+        except Exception:
+            return ""
+        ct = img.get("content_type") or "image/png"
+        return f"data:{ct};base64,{b64}"
+
     def _inject_image_urls_into_blocks(self, raw_content_json, image_urls):
         """
         raw_content_json ichidagi image blocklarga url qo‘shadi.
@@ -359,6 +412,8 @@ class WrittenQuestionDocxParser(BaseDocxParser):
                     raw_text=parsed["raw_text"],
                     formula_omml=parsed["formula_omml"],
                     formula_mathml=parsed["formula_mathml"],
+                    image_data=(self._cell_image_data_url(question_cell)
+                                or self._first_image_data_url(parsed["images"])),
                     raw_content_json=parsed["raw_content_json"],
                     difficulty="medium",
                     accessible=True,
@@ -420,11 +475,19 @@ class TestQuestionDocxParser(BaseDocxParser):
             option2 = self._clean_text(row.cells[4].text)
             option3 = self._clean_text(row.cells[5].text)
 
+            # Savol va variant kataklaridagi formulalar (MathType/WMF) -> PNG data URL
+            q_img = self._cell_image_data_url(row.cells[1])
+            correct_img = self._cell_image_data_url(row.cells[2])
+            option1_img = self._cell_image_data_url(row.cells[3])
+            option2_img = self._cell_image_data_url(row.cells[4])
+            option3_img = self._cell_image_data_url(row.cells[5])
+
             has_any_content = any([
                 question_parsed["content_html"],
                 question_parsed["raw_text"],
                 question_parsed["formula_omml"],
                 question_parsed["images"],
+                q_img, correct_img, option1_img, option2_img, option3_img,
             ])
             if not has_any_content:
                 continue
@@ -435,11 +498,16 @@ class TestQuestionDocxParser(BaseDocxParser):
                 raw_text=question_parsed["raw_text"],
                 formula_omml=question_parsed["formula_omml"],
                 formula_mathml=question_parsed["formula_mathml"],
+                image_data=(q_img or self._first_image_data_url(question_parsed["images"])),
                 raw_content_json=question_parsed["raw_content_json"],
                 correct_answer=correct_answer,
                 option1=option1,
                 option2=option2,
                 option3=option3,
+                correct_img=correct_img,
+                option1_img=option1_img,
+                option2_img=option2_img,
+                option3_img=option3_img,
                 accessible=True,
             )
 

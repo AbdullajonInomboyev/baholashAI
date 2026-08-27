@@ -49,6 +49,7 @@ class User(AbstractUser):
         choices=PasswordStatus.choices,
         default=PasswordStatus.TEMPORARY,
     )
+    is_guest = models.BooleanField("Mehmon (bir martalik test)", default=False)
 
     class Meta:
         verbose_name = "Foydalanuvchi"

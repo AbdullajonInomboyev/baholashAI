@@ -1,0 +1,42 @@
+{% extends 'portal/base_panel.html' %}
+{% block nav %}{% include 'portal/teacher/_nav.html' %}{% endblock %}
+{% block crumbs %}Bir martalik test / {{ s.title }}{% endblock %}
+{% block content %}
+<div class="page-head"><h1>{{ s.title }}</h1><div class="spacer"></div>
+  <span class="help">Test: {{ s.quiz.title }}</span></div>
+
+<div class="panel-card" style="max-width:720px"><h2>1) Talabalarni yuklash</h2>
+  <div class="help" style="margin-bottom:10px">Shablonni yuklab oling, talabalar F.I.Sh.’ini kiriting va yuklang. Har biriga login/parol avtomatik beriladi.</div>
+  <a class="btn ghost sm" href="{% url 'portal:guest_template' %}" style="margin-bottom:10px">📄 Shablon</a>
+  <form class="stack" method="post" enctype="multipart/form-data" action="{% url 'portal:guest_import' s.pk %}">{% csrf_token %}
+    <input type="file" name="file" accept=".xlsx" required>
+    <div style="margin-top:10px"><button class="btn sm" type="submit">Yuklash va login berish</button></div>
+  </form>
+</div>
+
+<div class="panel-card"><h2>2) Talabalar va loginlar ({{ rows|length }})</h2>
+  {% if rows %}
+  <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap">
+    <a class="btn sm" href="{% url 'portal:guest_logins_export' s.pk %}">⬇ Login/parollarni yuklab olish (Excel)</a>
+    <form class="inline-form" method="post" action="{% url 'portal:guest_toggle' s.pk %}">{% csrf_token %}<button class="btn sm ghost" type="submit">{% if s.is_open %}Sessiyani yopish{% else %}Sessiyani ochish{% endif %}</button></form>
+  </div>
+  <table class="grid"><thead><tr><th>F.I.Sh.</th><th>Login</th><th>Parol</th><th>Holat</th><th>Ball</th></tr></thead><tbody>
+    {% for r in rows %}<tr>
+      <td>{{ r.st.full_name }}</td><td><code>{{ r.st.login }}</code></td><td><code>{{ r.st.plain_password }}</code></td>
+      <td>{% if r.done %}<span class="tag ok">topshirgan</span>{% else %}<span class="tag mut">kutilmoqda</span>{% endif %}</td>
+      <td>{% if r.score is not None %}<b>{{ r.score }}</b>{% else %}—{% endif %}</td>
+    </tr>{% endfor %}
+  </tbody></table>
+  {% else %}<div class="empty">Hali talaba yuklanmagan.</div>{% endif %}
+</div>
+
+<div class="panel-card" style="max-width:720px"><h2>3) Yakunlash</h2>
+  <div class="help" style="margin-bottom:10px">Test tugagach: talabalarni o‘chirib tashlashingiz yoki keyingi safar uchun saqlab qolishingiz mumkin.</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <form class="inline-form" method="post" action="{% url 'portal:guest_students_delete' s.pk %}" onsubmit="return confirm('Barcha talabalar (loginlari bilan) o‘chirilsinmi? Sessiya qoladi.')">{% csrf_token %}<button class="btn sm danger" type="submit">Talabalarni o‘chirish</button></form>
+    <form class="inline-form" method="post" action="{% url 'portal:guest_session_delete' s.pk %}" onsubmit="return confirm('Sessiya butunlay o‘chirilsinmi?')">{% csrf_token %}<button class="btn sm danger" type="submit">Sessiyani o‘chirish</button></form>
+  </div>
+  <div class="help" style="margin-top:8px">Hech narsa qilmasangiz — hammasi saqlanib qoladi (keyingi safar ishlatasiz).</div>
+</div>
+<a class="btn ghost" href="{% url 'portal:guest_sessions' %}">← Sessiyalar</a>
+{% endblock %}
